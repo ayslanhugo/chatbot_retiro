@@ -1,0 +1,14 @@
+# Ignorar dependências do Node.js
+node_modules/
+
+# Ignorar ficheiros de sessão e cache do whatsapp-web.js
+.wwebjs_auth/
+.wwebjs_cache/
+meu-bot/
+
+# Ignorar ficheiros de credenciais e chaves de API
+credentials.json
+
+# Ignorar ficheiros de log e ambiente
+*.log
+.env
