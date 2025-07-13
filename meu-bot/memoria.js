@@ -83,9 +83,17 @@ const memoria = [
         resposta: "Durante o retiro, a proposta é desconectar do mundo pra se conectar com Deus e com os irmãos. Então pedimos que evite o uso do celular. Teremos horários específicos para fotos e comunicação com os familiares, se necessário. 🤳⛪"
     },
     {
-        id: 'roupa_modesta',
-        chaves: ['roupa modesta', 'vestimenta', 'vestir', 'decote', 'curto', 'modestia'],
-        resposta: "Pedimos que use roupas modestas e confortáveis. Evite roupas muito curtas, decotes ou blusas muito justas. O foco é vivermos algo profundo e verdadeiro, então o nosso exterior deve ajudar e não atrapalhar essa vivência. 😊"
+         id: 'roupa_modesta',
+    chaves: ['roupa modesta', 'modesta', 'vestimenta', 'vestir', 'decote', 'curto', 'modestia'],
+    resposta: `Ótima pergunta! A modéstia no vestir, para nós, não é sobre regras rígidas, mas sobre o respeito ao ambiente sagrado e a todos os participantes, ajudando a manter o foco na experiência com Deus. ❤️
+
+A ideia é usar roupas confortáveis que não marquem o corpo, não sejam transparentes e evitem decotes profundos ou comprimentos muito curtos.
+
+Para te ajudar a ter uma ideia:
+🙋‍♀️ *Para as mulheres:* T-shirts ou blusas sem decotes exagerados, calças confortáveis, saias ou vestidos com comprimento abaixo do joelho são ótimas opções.
+🙋‍♂️ *Para os homens:* Camisetas, camisas polo, calças e bermudas (na altura do joelho) são perfeitas.
+
+O mais importante é sentir-se bem e à vontade para viver tudo que Deus preparou para nós! 🙏`
     },
     {
         id: 'inclusividade_religiao',
@@ -155,7 +163,13 @@ const memoria = [
         id: 'ajuda',
         chaves: ['ajuda', 'comandos', 'opções', 'menu', 'começar'],
         resposta: `Claro! Você pode perguntar sobre qualquer um desses tópicos:\n\n- O que é o *JCC*?\n- *Atividades* do retiro\n- *Idade* mínima\n- Preciso *dormir* no local?\n- Posso usar *celular*?\n- O que é *roupa modesta*?\n- *Data* e *Horário*\n- *Local* do retiro\n- *Valor* da inscrição\n- Como fazer minha *inscrição*\n- Falar com a *organização*\n- Entrar no *grupo do WhatsApp*\n- Ver a *contagem* regressiva ⏳\n\nÉ só mandar uma palavra que eu explico tudo! 😉`
-    }
+    },
+    {
+    id: 'confirmacao_positiva',
+    chaves: ['vamos', 'bora', 'bora la', 'sim', 'pode ser', 'claro', 'vamoss', 'ok', 'demorou'],
+    resposta: `Legal! Você pode perguntar sobre qualquer um desses tópicos:\n\n- O que é o *JCC*?\n- *Atividades* do retiro\n- *Idade* mínima\n- Preciso *dormir* no local?\n- Posso usar *celular*?\n- O que é *roupa modesta*?\n- *Data* e *Horário*\n- *Local* do retiro\n- *Valor* da inscrição\n- Como fazer minha *inscrição*\n- Falar com a *organização*\n- Entrar no *grupo do WhatsApp*\n- Ver a *contagem* regressiva ⏳\n\nÉ só mandar uma palavra que eu explico tudo! 😉`
+},
 ];
+
 
 module.exports = memoria;
