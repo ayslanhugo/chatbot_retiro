@@ -1,24 +1,19 @@
-const moment = require('moment');
+// memoria.js - VERSÃO COM REFERÊNCIAS AO CONFIG CORRIGIDAS
 
-// --- Constantes de Conteúdo ---
-const VALOR_INSCRICAO = "50,00";
-const CHAVE_PIX = "contato@jcc.com";
-const NOME_CONTATO_PIX = "Maria da Tesouraria";
-const DATA_RETIRO = '2025-08-22';
-const INSTAGRAM_LINK = "https://www.instagram.com/jovensacaminhodoceu/";
-const WHATSAPP_GROUP_LINK = "https://chat.whatsapp.com/KssiLdJpmbr9Jmuh2d0ieU";
-const PLAYLIST_LINK = "https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M";
-const CONTATO_HUMANO_NOME = "Any";
-const CONTATO_HUMANO_NUMERO = "5575992022434";
+const moment = require('moment');
+// AJUSTE: O path para o config.js deve ser relativo à raiz do projeto.
+// Como este ficheiro estará em 'src/knowledge/', o path correto é '../../config.js'
+// Se o seu memoria.js está na mesma pasta do index.js, use './config.js'
+const config = require('./config.js'); 
 
 // --- "Memória" do Bot ---
 const memoria = [
     // ==================================================================
-    // AJUSTE: TÓPICOS SENSÍVEIS E ESPECÍFICOS COM PRIORIDADE MÁXIMA
+    // TÓPICOS DE ALTA PRIORIDADE
     // ==================================================================
     {
         id: 'inclusividade_lgbt',
-        chaves: ['homossexual', 'gay', 'lgbt', 'lgbtqia', 'lésbica', 'lesbica', 'trans', 'não-binário', 'nao-binario'],
+        chaves: ['homossexual', 'homosexual', 'gay', 'lgbt', 'lgbtqia', 'lésbica', 'lesbica', 'trans', 'não-binário', 'nao-binario'],
         resposta: "Você é muito bem-vindo(a) ao nosso retiro! Aqui acreditamos no amor e na acolhida. Nosso maior desejo é que cada pessoa viva uma experiência real com Deus, do jeitinho que é. 💛🙏"
     },
     {
@@ -29,9 +24,7 @@ const memoria = [
     {
         id: 'menor_idade',
         chaves: ['filho', 'filha', 'menor', 'autorização', 'autorizacao', 'responsável', 'responsavel'],
-        resposta: (nome) => {
-            return `Oi, ${nome}! Que bênção que o(a) jovem que você representa quer participar! 🙌\n\nPara garantir a segurança e o consentimento de todos, a regra é que *menores de 18 anos façam a inscrição presencialmente*, junto com o pai, mãe ou responsável legal.\n\n📍 **Onde?** No nosso grupo de oração, toda segunda-feira, às 19h30, no salão da Paróquia São Francisco.\n\n*Exceções são possíveis?*\nEm casos muito específicos onde a presença do responsável é impossível, a situação deve ser *previamente conversada com a organização*. Se for aprovado, será necessário enviar uma foto da ficha de inscrição impressa e devidamente assinada pelo responsável.\n\nPara tratar de uma exceção, por favor, *fale com um humano*.`;
-        },
+        resposta: (nome) => `Oi, ${nome}! Que bênção que o(a) jovem que você representa quer participar! 🙌\n\nPara garantir a segurança e o consentimento de todos, a regra é que *menores de 18 anos façam a inscrição presencialmente*, junto com o pai, mãe ou responsável legal.\n\n📍 **Onde?** No nosso grupo de oração, toda segunda-feira, às 19h30, no salão da Paróquia São Francisco.\n\n*Exceções são possíveis?*\nEm casos muito específicos onde a presença do responsável é impossível, a situação deve ser *previamente conversada com a organização*. Se for aprovado, será necessário enviar uma foto da ficha de inscrição impressa e devidamente assinada pelo responsável.\n\nPara tratar de uma exceção, por favor, *fale com um humano*.`
     },
     {
         id: 'roupa_modesta',
@@ -41,9 +34,8 @@ const memoria = [
     {
         id: 'comida_bebida',
         chaves: ['comida', 'levar comida', 'lanche', 'bebida', 'posso levar comida', 'fome', 'alimentação', 'refeição', 'refeicao'],
-        resposta: "Ótima pergunta! Todas as refeições principais (café da manhã, almoço e jantar) e lanches já estão inclusos e serão preparados com muito carinho pela nossa equipa. ❤️ Você não precisa se preocupar em levar comida.\n\nNo entanto, se você tiver alguma restrição alimentar específica ou quiser trazer um snack de sua preferência (como um chocolate ou biscoito), sinta-se à vontade!"
+        resposta: "Ótima pergunta! Todas as refeições principais (café da manhã, almoço e jantar) e lanches já estão inclusos e serão preparados com muito carinho pela nossa equipe. ❤️ Você não precisa se preocupar em levar comida.\n\nNo entanto, se você tiver alguma restrição alimentar específica ou quiser trazer um snack de sua preferência (como um chocolate ou biscoito), sinta-se à vontade!"
     },
-    // NOVO OBJETO ADICIONADO
     {
         id: 'colchonete',
         chaves: ['colchonete', 'colchão', 'levar colchonete', 'precisa de colchonete', 'tem colchão'],
@@ -54,11 +46,17 @@ const memoria = [
     // RESTO DOS COMANDOS
     // ==================================================================
     {
+        id: 'ficha',
+        chaves: ['ficha', 'pdf', 'formulario', 'inscrever', 'inscrição', 'participar', 'como faz', 'entrar', 'quero ir'],
+        resposta: (nome) => `Que alegria saber do seu interesse, ${nome}! 😊\n\n⚠️ *ATENÇÃO: Se o participante for menor de 18 anos, a inscrição deve ser feita obrigatoriamente de forma PRESENCIAL, acompanhado(a) de um responsável.*\n\nEntendido isso, como você prefere continuar?\n\n1️⃣ *Online (Apenas para maiores de 18 anos)*\nEu envio-lhe a ficha, você preenche, paga por PIX e envia-me o comprovativo.\n\n2️⃣ *Presencialmente*\nVocê pode ir ao nosso grupo de oração (toda segunda-feira, às 19h30, no salão da paróquia) e fazer a sua inscrição e pagamento diretamente com a nossa equipe.\n\nDigite *1* para Online ou *2* para Presencial.`
+    },
+    {
         id: 'contagem',
         chaves: ['quanto falta', 'contagem', 'faltam quantos dias'],
         funcaoResposta: () => {
             const hoje = moment().startOf('day');
-            const dataRetiro = moment(DATA_RETIRO, 'YYYY-MM-DD');
+            // AJUSTE: Usando config
+            const dataRetiro = moment(config.DATA_RETIRO, 'YYYY-MM-DD');
             const diasFaltantes = dataRetiro.diff(hoje, 'days');
 
             if (diasFaltantes > 1) return `Faltam apenas ${diasFaltantes} dias para o nosso retiro! Que a contagem já comece com muita expectativa e oração! 🔥`;
@@ -66,11 +64,6 @@ const memoria = [
             if (diasFaltantes === 0) return "É HOJE! Chegou o dia tão esperado! Estamos prontos para viver algo lindo com você. 🙌";
             return "O retiro já passou — e que bênção que foi! Em breve teremos mais momentos lindos como esse. 💛";
         }
-    },
-    {
-        id: 'ficha',
-        chaves: ['ficha', 'pdf', 'formulario', 'inscrever', 'inscrição', 'participar', 'como faz', 'entrar', 'quero ir'],
-        resposta: (nome) => `Que alegria saber do seu interesse, ${nome}! 😊\n\n⚠️ *ATENÇÃO: Se o participante for menor de 18 anos, a inscrição deve ser feita obrigatoriamente de forma PRESENCIAL, acompanhado(a) de um responsável.*\n\nEntendido isso, como você prefere continuar?\n\n1️⃣ *Online (Apenas para maiores de 18 anos)*\nEu envio-lhe a ficha, você preenche, paga por PIX e envia-me o comprovativo.\n\n2️⃣ *Presencialmente*\nVocê pode ir ao nosso grupo de oração (toda segunda-feira, às 19h30, no salão da paróquia) e fazer a sua inscrição e pagamento diretamente com a nossa equipa.\n\nDigite *1* para Online ou *2* para Presencial.`
     },
     {
         id: 'inscricao_presencial',
@@ -92,7 +85,6 @@ const memoria = [
         chaves: ['atividades', 'programação', 'o que vai ter', 'como vai ser', 'o que acontece', 'cronograma', 'o que rola'],
         resposta: "Vai ter muita coisa boa! Momentos profundos de oração, pregações, adoração ao Santíssimo, música, louvor, Santa Missa... e também partilhas, dinâmicas, surpresas e MUITA alegria! 💥🙏🎶",
         resposta_seguimento: "Sim! Teremos momentos de partilha em pequenos grupos, dinâmicas divertidas para nos conhecermos melhor e, claro, intervalos para um café e um bom bate-papo. A programação foi pensada para equilibrar os momentos de espiritualidade profunda com a alegria da convivência."
-
     },
     {
         id: 'idade',
@@ -102,7 +94,8 @@ const memoria = [
     {
         id: 'dormir_local',
         chaves: ['dormir', 'pernoitar', 'preciso dormir', 'tenho que dormir', 'é obrigatório dormir', 'posso ir embora'],
-        resposta: "Sim! O retiro é uma experiência de imersão completa, e o pernoite no local faz parte dessa vivência. Isso fortalece a comunhão e nos ajuda a viver intensamente cada momento. Por isso, pedimos que leve colchonete e roupas de cama. 😊"
+        resposta: "Sim! O retiro é uma experiência de imersão completa, e o pernoite no local faz parte dessa vivência. Isso fortalece a comunhão e nos ajuda a viver intensamente cada momento. Por isso, pedimos que leve colchonete e roupas de cama. 😊",
+        resposta_seguimento: "Com certeza! Além do colchonete, lembre-se de trazer um lençol, um travesseiro e um cobertor para garantir que you tenha uma noite de sono confortável e revigorante. 🙏"
     },
     {
         id: 'uso_celular',
@@ -112,16 +105,18 @@ const memoria = [
     {
         id: 'falar_humano',
         chaves: ['humano', 'pessoa', 'organizador', 'organização', 'atendente', 'falar com'],
-        resposta: `Claro! Se quiser conversar diretamente com alguém da equipa, pode chamar a *${CONTATO_HUMANO_NOME}*, uma das organizadoras. Ela vai te ajudar com muito carinho! 💬❤️\n\n📲 Clique aqui para falar com ela:\nhttps://wa.me/${CONTATO_HUMANO_NUMERO}`
+        // AJUSTE: Usando o objeto config
+        resposta: `Claro! Se quiser conversar diretamente com alguém da equipe, pode chamar a *${config.CONTATO_HUMANO_NOME}*, uma das organizadoras. Ela vai te ajudar com muito carinho! 💬❤️\n\n📲 Clique aqui para falar com ela:\nhttps://wa.me/${config.CONTATO_HUMANO_NUMERO}`
     },
     {
         id: 'grupo_whatsapp',
         chaves: ['grupo', 'whatsapp', 'link do grupo', 'grupo de avisos'],
-        resposta: `Entre no nosso grupo do WhatsApp para não perder nenhuma novidade! Vai ser ótimo ter você com a gente lá. 💌\n\n📲 ${WHATSAPP_GROUP_LINK}`
+        // AJUSTE: Usando o objeto config
+        resposta: `Entre no nosso grupo do WhatsApp para não perder nenhuma novidade! Vai ser ótimo ter você com a gente lá. 💌\n\n📲 ${config.WHATSAPP_GROUP_LINK}`
     },
     {
         id: 'saudacao',
-        chaves: ['oi', 'oie','oie', 'oii', 'oiii', 'olá', 'e aí', 'tudo bem', 'opa', 'bom dia', 'boa tarde', 'boa noite'],
+        chaves: ['oi', 'oie', 'oii', 'oiii', 'olá', 'e aí', 'tudo bem', 'opa', 'bom dia', 'boa tarde', 'boa noite'],
         resposta: (nome) => [
             `Oi, ${nome}! Que bom te ver por aqui! 😊 Eu sou o assistente virtual do retiro Kerigmático JCC. Em que posso te ajudar hoje?`,
             `Olá, ${nome}! A paz de Cristo! 🙏 Estou aqui para te ajudar com tudo que precisar sobre o retiro. Bora lá?`
@@ -135,12 +130,13 @@ const memoria = [
     {
         id: 'despedida',
         chaves: ['tchau', 'até mais', 'obrigado', 'obg', 'vlw', 'valeu', 'falou', 'de nada', 'disponha'],
+        // AJUSTE: Usando o objeto config
         resposta: (nome) => [
             `Disponha, ${nome}! Que Deus te abençoe muito! 🙌`,
-            `Foi uma alegria te ajudar, ${nome}! Já aproveita e segue nosso Insta: ${INSTAGRAM_LINK} 😉`,
+            `Foi uma alegria te ajudar, ${nome}! Já aproveita e segue nosso Insta: ${config.INSTAGRAM_LINK} 😉`,
             `Fico feliz em poder ajudar! Te espero no retiro com o coração aberto! ❤️`,
-            `Tamo junto, ${nome}! E se quiser ir entrando no clima, ouve nossa playlist especial: ${PLAYLIST_LINK}`,
-            `Até logo, ${nome}! Se precisar, é só chamar. E entra no nosso grupo: ${WHATSAPP_GROUP_LINK}`
+            `Tamo junto, ${nome}! E se quiser ir entrando no clima, ouve nossa playlist especial: ${config.PLAYLIST_LINK}`,
+            `Até logo, ${nome}! Se precisar, é só chamar. E entra no nosso grupo: ${config.WHATSAPP_GROUP_LINK}`
         ]
     },
     {
@@ -158,7 +154,6 @@ const memoria = [
         chaves: ['levar', 'mala', 'trazer', 'roupa', 'preciso', 'o que levar', 'na mala'],
         resposta: "Ótimo que você quer se preparar! Leve: Bíblia, caderno, caneta, colchonete, roupas de cama e banho, roupas modestas (inclusive para o banho), sua garrafinha, prato, copo, talheres, terço e itens de higiene pessoal. 😊", 
         resposta_seguimento: "Claro! Além do básico, um detalhe importante é trazer um terço para os momentos de oração. Se você gosta de anotar, um caderno extra ou diário espiritual também é uma ótima ideia! Outro ponto é não se esquecer de remédios de uso pessoal, se precisar."
-
     },
     {
         id: 'local',
@@ -168,7 +163,8 @@ const memoria = [
     {
         id: 'valor',
         chaves: ['valor', 'pagamento', 'preço', 'custa', 'pagar', 'taxa', 'pago alguma coisa', 'é de graça', 'quanto custa', 'qual o valor'],
-        funcaoResposta: () => `A inscrição custa R$ ${VALOR_INSCRICAO}.\n\n💸 O pagamento pode ser feito por PIX:\nChave: *${CHAVE_PIX}* (em nome de ${NOME_CONTATO_PIX}).\n\nDepois é só mandar o comprovante aqui mesmo no chat que eu cuido do resto por você! 😉`
+        // AJUSTE: Usando o objeto config
+        funcaoResposta: () => `A inscrição custa R$ ${config.VALOR_INSCRICAO}.\n\n💸 O pagamento pode ser feito por PIX:\nChave: *${config.CHAVE_PIX}* (em nome de ${config.NOME_CONTATO_PIX}).\n\nDepois é só mandar o comprovante aqui mesmo no chat que eu cuido do resto por você! 😉`
     },
     {
         id: 'ajuda',
