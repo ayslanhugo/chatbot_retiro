@@ -1,9 +1,6 @@
-// memoria.js - VERSÃO COM REFERÊNCIAS AO CONFIG CORRIGIDAS
+// memoria.js - VERSÃO FINAL COM TODOS OS IDs E CONSTANTES CORRIGIDOS E RESPOSTAS COMPLETAS
 
 const moment = require('moment');
-// AJUSTE: O path para o config.js deve ser relativo à raiz do projeto.
-// Como este ficheiro estará em 'src/knowledge/', o path correto é '../../config.js'
-// Se o seu memoria.js está na mesma pasta do index.js, use './config.js'
 const config = require('./config.js'); 
 
 // --- "Memória" do Bot ---
@@ -46,19 +43,17 @@ const memoria = [
     // RESTO DOS COMANDOS
     // ==================================================================
     {
-        id: 'ficha',
+        id: 'fazer_inscricao', 
         chaves: ['ficha', 'pdf', 'formulario', 'inscrever', 'inscrição', 'participar', 'como faz', 'entrar', 'quero ir'],
-        resposta: (nome) => `Que alegria saber do seu interesse, ${nome}! 😊\n\n⚠️ *ATENÇÃO: Se o participante for menor de 18 anos, a inscrição deve ser feita obrigatoriamente de forma PRESENCIAL, acompanhado(a) de um responsável.*\n\nEntendido isso, como você prefere continuar?\n\n1️⃣ *Online (Apenas para maiores de 18 anos)*\nEu envio-lhe a ficha, você preenche, paga por PIX e envia-me o comprovativo.\n\n2️⃣ *Presencialmente*\nVocê pode ir ao nosso grupo de oração (toda segunda-feira, às 19h30, no salão da paróquia) e fazer a sua inscrição e pagamento diretamente com a nossa equipe.\n\nDigite *1* para Online ou *2* para Presencial.`
+        resposta: (nome) => `Que alegria saber do seu interesse, ${nome}! 😊\n\n⚠️ *ATENÇÃO: Se o participante for menor de 18 anos, a inscrição deve ser feita obrigatoriamente de forma PRESENCIAL, acompanhado(a) de um responsável.*\n\nEntendido isso, como você prefere continuar?\n\n1️⃣ *Online (Apenas para maiores de 18 anos)*\nEu envio-lhe a ficha, você preenche, paga por PIX e envia-me o comprovante.\n\n2️⃣ *Presencialmente*\nVocê pode ir ao nosso grupo de oração (toda segunda-feira, às 19h30, no salão da paróquia) e fazer a sua inscrição e pagamento diretamente com a nossa equipe.\n\nDigite *1* para Online ou *2* para Presencial.`
     },
     {
         id: 'contagem',
         chaves: ['quanto falta', 'contagem', 'faltam quantos dias'],
         funcaoResposta: () => {
             const hoje = moment().startOf('day');
-            // AJUSTE: Usando config
             const dataRetiro = moment(config.DATA_RETIRO, 'YYYY-MM-DD');
             const diasFaltantes = dataRetiro.diff(hoje, 'days');
-
             if (diasFaltantes > 1) return `Faltam apenas ${diasFaltantes} dias para o nosso retiro! Que a contagem já comece com muita expectativa e oração! 🔥`;
             if (diasFaltantes === 1) return "Falta só 1 dia! 😱 Já separou a mala? Amanhã começa nossa grande aventura com Deus!";
             if (diasFaltantes === 0) return "É HOJE! Chegou o dia tão esperado! Estamos prontos para viver algo lindo com você. 🙌";
@@ -71,17 +66,27 @@ const memoria = [
         resposta: "Perfeito! Você pode se inscrever presencialmente no nosso grupo de oração, que acontece toda segunda-feira, a partir das 19h30, no salão da Paróquia São Francisco. Estaremos lá para te receber com alegria! 🙏"
     },
     {
+        id: 'inscricao_online_detalhes',
+        chaves: [],
+        resposta: `Combinado! O processo online é bem simples e feito em 2 passos:\n\n1️⃣ *Preencha a Ficha:*\nBaixe e preencha a ficha de inscrição neste link:\nhttp://ayslanhugo.pythonanywhere.com/static/ficha_inscricao.pdf\n\n2️⃣ *Faça o Pagamento:*\nA inscrição custa R$ ${config.VALOR_INSCRICAO}.\nO pagamento pode ser feito por PIX:\nChave: *${config.CHAVE_PIX}* (em nome de ${config.NOME_CONTATO_PIX}).\n\nDepois de pagar, é só me enviar o *comprovante* aqui no chat junto com a palavra 'comprovante' que eu finalizo para você. 😉`
+    },
+    {
         id: 'sobre_jcc',
         chaves: ['jcc', 'jovens a caminho do ceu'],
         resposta: `O JCC significa "Jovens a Caminho do Céu"! É o nosso grupo de oração cheio de vida, alegria e fé. Nos reunimos toda segunda-feira para rezar, conversar, crescer juntos e viver experiências incríveis com Deus. 💒✨`
     },
     {
         id: 'sobre_retiro',
-        chaves: ['o que é o retiro', 'sobre o retiro', 'kerigma', 'kerigmático', 'o que significa'],
-        resposta: `O Retiro Kerigmático JCC é um final de semana transformador preparado por jovens, para jovens. 🙏✨\n\n“Kerigma” significa “proclamação” — é o anúncio do amor de Deus, do jeito mais profundo e verdadeiro. É um encontro com Ele, com você mesmo(a) e com uma nova vida que pode nascer ali. ❤️`
+        chaves: ['o que é o retiro', 'sobre o retiro', 'kerigma', 'kerigmático', 'retiro jcc', 'retiro jovens'],
+        resposta: `O Retiro Kerigmático JCC é um final de semana transformador preparado por jovens, para jovens. 🙏✨`
     },
     {
-        id: 'atividades',
+    id: 'kerigma_explicacao', 
+    chaves: ['kerigma', 'o que significa kerigma', 'significado kerigma', 'o que é kerigma'],
+    resposta: "Que bom que perguntou! 'Kerigma' é uma palavra grega que significa 'proclamação' ou 'o primeiro anúncio'. O nosso retiro é 'Kerigmático' porque o seu foco é anunciar a mensagem mais fundamental do Cristianismo: o amor de Deus manifestado em Jesus Cristo. É um encontro com este primeiro e mais poderoso anúncio da fé. ❤️"
+    },
+    {
+        id: 'saber_atividades',
         chaves: ['atividades', 'programação', 'o que vai ter', 'como vai ser', 'o que acontece', 'cronograma', 'o que rola'],
         resposta: "Vai ter muita coisa boa! Momentos profundos de oração, pregações, adoração ao Santíssimo, música, louvor, Santa Missa... e também partilhas, dinâmicas, surpresas e MUITA alegria! 💥🙏🎶",
         resposta_seguimento: "Sim! Teremos momentos de partilha em pequenos grupos, dinâmicas divertidas para nos conhecermos melhor e, claro, intervalos para um café e um bom bate-papo. A programação foi pensada para equilibrar os momentos de espiritualidade profunda com a alegria da convivência."
@@ -95,7 +100,7 @@ const memoria = [
         id: 'dormir_local',
         chaves: ['dormir', 'pernoitar', 'preciso dormir', 'tenho que dormir', 'é obrigatório dormir', 'posso ir embora'],
         resposta: "Sim! O retiro é uma experiência de imersão completa, e o pernoite no local faz parte dessa vivência. Isso fortalece a comunhão e nos ajuda a viver intensamente cada momento. Por isso, pedimos que leve colchonete e roupas de cama. 😊",
-        resposta_seguimento: "Com certeza! Além do colchonete, lembre-se de trazer um lençol, um travesseiro e um cobertor para garantir que you tenha uma noite de sono confortável e revigorante. 🙏"
+        resposta_seguimento: "Com certeza! Além do colchonete, lembre-se de trazer um lençol, um travesseiro e um cobertor para garantir que você tenha uma noite de sono confortável e revigorante. 🙏"
     },
     {
         id: 'uso_celular',
@@ -105,22 +110,17 @@ const memoria = [
     {
         id: 'falar_humano',
         chaves: ['humano', 'pessoa', 'organizador', 'organização', 'atendente', 'falar com'],
-        // AJUSTE: Usando o objeto config
         resposta: `Claro! Se quiser conversar diretamente com alguém da equipe, pode chamar a *${config.CONTATO_HUMANO_NOME}*, uma das organizadoras. Ela vai te ajudar com muito carinho! 💬❤️\n\n📲 Clique aqui para falar com ela:\nhttps://wa.me/${config.CONTATO_HUMANO_NUMERO}`
     },
     {
         id: 'grupo_whatsapp',
         chaves: ['grupo', 'whatsapp', 'link do grupo', 'grupo de avisos'],
-        // AJUSTE: Usando o objeto config
         resposta: `Entre no nosso grupo do WhatsApp para não perder nenhuma novidade! Vai ser ótimo ter você com a gente lá. 💌\n\n📲 ${config.WHATSAPP_GROUP_LINK}`
     },
     {
         id: 'saudacao',
         chaves: ['oi', 'oie', 'oii', 'oiii', 'olá', 'e aí', 'tudo bem', 'opa', 'bom dia', 'boa tarde', 'boa noite'],
-        resposta: (nome) => [
-            `Oi, ${nome}! Que bom te ver por aqui! 😊 Eu sou o assistente virtual do retiro Kerigmático JCC. Em que posso te ajudar hoje?`,
-            `Olá, ${nome}! A paz de Cristo! 🙏 Estou aqui para te ajudar com tudo que precisar sobre o retiro. Bora lá?`
-        ]
+        resposta: (nome) => [`Oi, ${nome}! Que bom te ver por aqui! 😊 Eu sou o assistente virtual do retiro Kerigmático JCC. Em que posso te ajudar hoje?`, `Olá, ${nome}! A paz de Cristo! 🙏 Estou aqui para te ajudar com tudo que precisar sobre o retiro. Bora lá?`]
     },
     {
         id: 'confirmacao_positiva',
@@ -130,17 +130,10 @@ const memoria = [
     {
         id: 'despedida',
         chaves: ['tchau', 'até mais', 'obrigado', 'obg', 'vlw', 'valeu', 'falou', 'de nada', 'disponha'],
-        // AJUSTE: Usando o objeto config
-        resposta: (nome) => [
-            `Disponha, ${nome}! Que Deus te abençoe muito! 🙌`,
-            `Foi uma alegria te ajudar, ${nome}! Já aproveita e segue nosso Insta: ${config.INSTAGRAM_LINK} 😉`,
-            `Fico feliz em poder ajudar! Te espero no retiro com o coração aberto! ❤️`,
-            `Tamo junto, ${nome}! E se quiser ir entrando no clima, ouve nossa playlist especial: ${config.PLAYLIST_LINK}`,
-            `Até logo, ${nome}! Se precisar, é só chamar. E entra no nosso grupo: ${config.WHATSAPP_GROUP_LINK}`
-        ]
+        resposta: (nome) => [`Disponha, ${nome}! Que Deus te abençoe muito! 🙌`, `Foi uma alegria te ajudar, ${nome}! Já aproveita e segue nosso Insta: ${config.INSTAGRAM_LINK} 😉`, `Fico feliz em poder ajudar! Te espero no retiro com o coração aberto! ❤️`, `Tamo junto, ${nome}! E se quiser ir entrando no clima, ouve nossa playlist especial: ${config.PLAYLIST_LINK}`, `Até logo, ${nome}! Se precisar, é só chamar. E entra no nosso grupo: ${config.WHATSAPP_GROUP_LINK}`]
     },
     {
-        id: 'data',
+        id: 'consultar_data',
         chaves: ['data', 'quando', 'datas', 'calendário', 'que dia'],
         resposta: "O retiro vai acontecer nos dias 22, 23 e 24 de agosto de 2025. Já anota aí no seu coração (e na agenda também)! 😄"
     },
@@ -152,18 +145,17 @@ const memoria = [
     {
         id: 'levar',
         chaves: ['levar', 'mala', 'trazer', 'roupa', 'preciso', 'o que levar', 'na mala'],
-        resposta: "Ótimo que você quer se preparar! Leve: Bíblia, caderno, caneta, colchonete, roupas de cama e banho, roupas modestas (inclusive para o banho), sua garrafinha, prato, copo, talheres, terço e itens de higiene pessoal. 😊", 
+        resposta: "Ótimo que você quer se preparar! Leve: Bíblia, caderno, caneta, colchonete, roupas de cama e banho, roupas modestas (inclusive para o banho), sua garrafinha, prato, copo, talheres, terço e itens de higiene pessoal. 😊",
         resposta_seguimento: "Claro! Além do básico, um detalhe importante é trazer um terço para os momentos de oração. Se você gosta de anotar, um caderno extra ou diário espiritual também é uma ótima ideia! Outro ponto é não se esquecer de remédios de uso pessoal, se precisar."
     },
     {
-        id: 'local',
+        id: 'consultar_local',
         chaves: ['local', 'endereço', 'onde', 'lugar', 'escola', 'vai ser onde', 'em que lugar'],
         resposta: "O retiro será numa escola aqui em Paulo Afonso! Estamos finalizando os detalhes do local e logo avisaremos no Instagram e no grupo do WhatsApp. Fique de olho! 📍"
     },
     {
-        id: 'valor',
+        id: 'consultar_valor',
         chaves: ['valor', 'pagamento', 'preço', 'custa', 'pagar', 'taxa', 'pago alguma coisa', 'é de graça', 'quanto custa', 'qual o valor'],
-        // AJUSTE: Usando o objeto config
         funcaoResposta: () => `A inscrição custa R$ ${config.VALOR_INSCRICAO}.\n\n💸 O pagamento pode ser feito por PIX:\nChave: *${config.CHAVE_PIX}* (em nome de ${config.NOME_CONTATO_PIX}).\n\nDepois é só mandar o comprovante aqui mesmo no chat que eu cuido do resto por você! 😉`
     },
     {
@@ -172,5 +164,4 @@ const memoria = [
         resposta: `Claro! Você pode perguntar sobre qualquer um desses tópicos:\n\n- O que é o *JCC*?\n- *Atividades* do retiro\n- *Idade* mínima\n- Preciso *dormir* no local?\n- Posso usar *celular*?\n- O que é *roupa modesta*?\n- *Data* e *Horário*\n- *Local* do retiro\n- *Valor* da inscrição\n- Como fazer minha *inscrição*\n- Falar com a *organização*\n- Entrar no *grupo do WhatsApp*\n- Ver a *contagem* regressiva ⏳\n\nÉ só mandar uma palavra que eu explico tudo! 😉`
     },
 ];
-
 module.exports = memoria;

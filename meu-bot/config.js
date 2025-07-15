@@ -15,4 +15,6 @@ module.exports = {
     PLAYLIST_LINK: "https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M",
     CONTATO_HUMANO_NOME: "Any",
     CONTATO_HUMANO_NUMERO: "5575992022434",
+
+    GCLOUD_PROJECT_ID: "bot-retiro-jcc",
 };                                                  
