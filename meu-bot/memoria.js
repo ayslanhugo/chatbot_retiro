@@ -1,7 +1,46 @@
-// memoria.js
+// memoria.js (VERSÃO COM MENU MELHORADO)
 
 const moment = require('moment');
-const config = require('./config.js'); 
+const config = require('./config.js');
+
+// ==================================================================
+// ESTRUTURA DO MENU PRINCIPAL
+// ==================================================================
+const MENU_PRINCIPAL = [
+    { numero: 1, secao: 'INFORMAÇÕES ESSENCIAIS', emoji: '🗓️', titulo: 'Data, Horário e Local', id_intent: 'consultar_data' },
+    { numero: 2, secao: 'INFORMAÇÕES ESSENCIAIS', emoji: '💰', titulo: 'Valor e como pagar', id_intent: 'consultar_valor' },
+    { numero: 3, secao: 'INFORMAÇÕES ESSENCIAIS', emoji: '📝', titulo: 'Como fazer a inscrição', id_intent: 'fazer_inscricao' },
+    
+    { numero: 4, secao: 'VIDA NO RETIRO', emoji: '🎒', titulo: 'O que levar para o retiro', id_intent: 'levar' },
+    { numero: 5, secao: 'VIDA NO RETIRO', emoji: '🍔', titulo: 'Alimentação no retiro', id_intent: 'comida_bebida' },
+    { numero: 6, secao: 'VIDA NO RETIRO', emoji: '🎉', titulo: 'Atividades e programação', id_intent: 'saber_atividades' },
+    { numero: 7, secao: 'VIDA NO RETIRO', emoji: '📜', titulo: 'Regras do retiro', id_intent: 'roupa_modesta' },
+
+    { numero: 8, secao: 'SOBRE E CONTATO', emoji: '❓', titulo: 'O que é o Retiro / JCC?', id_intent: 'sobre_retiro' },
+    { numero: 9, secao: 'SOBRE E CONTATO', emoji: '⏳', titulo: 'Quanto tempo falta?', id_intent: 'contagem' },
+    { numero: 10, secao: 'SOBRE E CONTATO', emoji: '💬', titulo: 'Falar com um organizador', id_intent: 'falar_humano' },
+    { numero: 11, secao: 'SOBRE E CONTATO', emoji: '🔗', titulo: 'Entrar no grupo do WhatsApp', id_intent: 'grupo_whatsapp' },
+];
+
+
+// Função que constrói a string do menu com seções e formatação
+const construirTextoMenu = () => {
+    let textoMenu = 'Como posso te ajudar hoje? 😊\n';
+    textoMenu += '_Por favor, digite o número da opção desejada:_\n\n';
+
+    let secaoAtual = '';
+    MENU_PRINCIPAL.forEach(item => {
+        // Se a seção do item atual for diferente da anterior, imprime o novo título de seção
+        if (item.secao !== secaoAtual) {
+            textoMenu += `*${item.secao}*\n`;
+            secaoAtual = item.secao;
+        }
+        textoMenu += `${item.emoji} *${item.numero}* - ${item.titulo}\n`;
+    });
+    
+    return textoMenu;
+};
+
 
 // --- "Memória" do Bot ---
 const memoria = [
@@ -26,7 +65,7 @@ const memoria = [
     {
         id: 'roupa_modesta',
         chaves: ['roupa modesta', 'modesta', 'vestimenta', 'vestir', 'decote', 'curto', 'modestia'],
-        resposta: `Ótima pergunta! A modéstia no vestir, para nós, não é sobre regras rígidas, mas sobre o respeito ao ambiente sagrado e a todos os participantes, ajudando a manter o foco na experiência com Deus. ❤️\n\nA ideia é usar roupas confortáveis que não marquem o corpo, não sejam transparentes e evitem decotes profundos ou comprimentos muito curtos.\n\nPara te ajudar a ter uma ideia:\n🙋‍♀️ *Para as mulheres:* T-shirts ou blusas sem decotes exagerados, calças confortáveis, saias ou vestidos com comprimento abaixo do joelho são ótimas opções.\n🙋‍♂️ *Para os homens:* Camisetas, camisas polo, calças e bermudas (na altura do joelho) são perfeitas.\n\nO mais importante é sentir-se bem e à vontade para viver tudo que Deus preparou para nós! 🙏`
+        resposta: `Ótima pergunta! A modéstia no vestir, para nós, não é sobre regras rígidas, mas sobre o respeito ao ambiente sagrado e a todos os participantes, ajudando a manter o foco na experiência com Deus. ❤️\n\nA ideia é usar roupas confortáveis que não marquem o corpo, não sejam transparentes e evitem decotes profundos ou comprimentos muito curtos.\n\nPara te ajudar a ter uma ideia:\n🙋‍♀️ *Para as mulheres:* T-shirts ou blusas sem decotes exagerados, calças confortáveis, saias ou vestidos com comprimento abaixo do joelho são ótimas opções.\n🙋‍♂️ *Para os homens:* Camisetas, camisas polo, calças e bermudas (na altura do joelho) são perfeitas.\n\nSe tiver dúvidas sobre o uso de celular ou outras regras, pode perguntar também!\n\nO mais importante é sentir-se bem e à vontade para viver tudo que Deus preparou para nós! 🙏`
     },
     {
         id: 'comida_bebida',
@@ -43,7 +82,7 @@ const memoria = [
     // RESTO DOS COMANDOS
     // ==================================================================
     {
-        id: 'fazer_inscricao', 
+        id: 'fazer_inscricao',
         chaves: ['ficha', 'pdf', 'formulario', 'inscrever', 'inscrição', 'participar', 'como faz', 'entrar', 'quero ir'],
         resposta: (nome) => `Que alegria saber do seu interesse, ${nome}! 😊\n\n⚠️ *ATENÇÃO: Se o participante for menor de 18 anos, a inscrição deve ser feita obrigatoriamente de forma PRESENCIAL, acompanhado(a) de um responsável.*\n\nEntendido isso, como você prefere continuar?\n\n1️⃣ *Online (Apenas para maiores de 18 anos)*\nEu envio-lhe a ficha, você preenche, paga por PIX e envia-me o comprovante.\n\n2️⃣ *Presencialmente*\nVocê pode ir ao nosso grupo de oração (toda segunda-feira, às 19h30, no salão da paróquia) e fazer a sua inscrição e pagamento diretamente com a nossa equipe.\n\nDigite *1* para Online ou *2* para Presencial.`
     },
@@ -78,10 +117,10 @@ const memoria = [
     {
         id: 'sobre_retiro',
         chaves: ['o que é o retiro', 'sobre o retiro', 'kerigma', 'kerigmático', 'retiro jcc', 'retiro jovens'],
-        resposta: `O Retiro Kerigmático JCC é um final de semana transformador preparado por jovens, para jovens. 🙏✨`
+        resposta: `O Retiro Kerigmático JCC é um final de semana transformador preparado por jovens, para jovens. 🙏✨ O foco dele é o Kerigma, que é o primeiro e mais fundamental anúncio do amor de Deus por nós. Além disso, o JCC (Jovens a Caminho do Céu) é o nosso grupo de oração que se reúne toda segunda-feira!`
     },
     {
-    id: 'kerigma_explicacao', 
+    id: 'kerigma_explicacao',
     chaves: ['kerigma', 'o que significa kerigma', 'significado kerigma', 'o que é kerigma'],
     resposta: "Que bom que perguntou! 'Kerigma' é uma palavra grega que significa 'proclamação' ou 'o primeiro anúncio'. O nosso retiro é 'Kerigmático' porque o seu foco é anunciar a mensagem mais fundamental do Cristianismo: o amor de Deus manifestado em Jesus Cristo. É um encontro com este primeiro e mais poderoso anúncio da fé. ❤️"
     },
@@ -118,22 +157,17 @@ const memoria = [
         resposta: `Entre no nosso grupo do WhatsApp para não perder nenhuma novidade! Vai ser ótimo ter você com a gente lá. 💌\n\n📲 ${config.WHATSAPP_GROUP_LINK}`
     },
     {
-    id: 'saudacao',
-    chaves: ['oi', 'oie', 'oii', 'oiii', 'olá', 'e aí', 'tudo bem', 'opa', 'bom dia', 'boa tarde', 'boa noite'],
-    funcaoResposta: (nomeUsuario) => {
-        // Encontra o texto da ajuda que acabámos de formatar
-        const menuDeAjuda = memoria.find(item => item.id === 'ajuda').resposta;
-
-        // Monta a mensagem de boas-vindas completa
-        const saudacaoInicial = `Olá, ${nomeUsuario}! A paz de Cristo! 🙏\nEu sou o RCC (robô a caminho do céu), e estou aqui para te auxiliar na preparação para o retiro Kerigmático JCC.\n\n`;
-
-        return saudacaoInicial + menuDeAjuda;
-    }
+        id: 'saudacao',
+        chaves: ['oi', 'oie', 'oii', 'oiii', 'olá', 'e aí', 'tudo bem', 'opa', 'bom dia', 'boa tarde', 'boa noite'],
+        resposta: (nome) => {
+            const saudacaoInicial = `Olá, ${nome}! A paz de Cristo! 🙏 Eu sou o assistente virtual do retiro Kerigmático JCC.\n\n`;
+            return saudacaoInicial + construirTextoMenu();
+        }
     },
     {
         id: 'confirmacao_positiva',
         chaves: ['vamos', 'bora', 'bora la', 'sim', 'pode ser', 'claro', 'vamoss', 'ok', 'demorou'],
-        resposta: `Legal! Você pode perguntar sobre qualquer um desses tópicos:\n\n- O que é o *JCC*?\n- *Atividades* do retiro\n- *Idade* mínima\n- Preciso *dormir* no local?\n- Posso usar *celular*?\n- O que é *roupa modesta*?\n- *Data* e *Horário*\n- *Local* do retiro\n- *Valor* da inscrição\n- Como fazer minha *inscrição*\n- Falar com a *organização*\n- Entrar no *grupo do WhatsApp*\n- Ver a *contagem* regressiva ⏳\n\nÉ só mandar uma palavra que eu explico tudo! 😉`
+        resposta: construirTextoMenu
     },
     {
         id: 'despedida',
@@ -143,7 +177,7 @@ const memoria = [
     {
         id: 'consultar_data',
         chaves: ['data', 'quando', 'datas', 'calendário', 'que dia'],
-        resposta: "O retiro vai acontecer nos dias 22, 23 e 24 de agosto de 2025. Já anota aí no seu coração (e na agenda também)! 😄"
+        resposta: "O retiro vai acontecer nos dias 22, 23 e 24 de agosto de 2025. Já anota aí no seu coração (e na agenda também)! 😄\n\nEle começa na sexta-feira (22/08) às 19h e termina no domingo (24/08) às 18h, com a Santa Missa. ✨"
     },
     {
         id: 'horario',
@@ -159,7 +193,7 @@ const memoria = [
     {
         id: 'consultar_local',
         chaves: ['local', 'endereço', 'onde', 'lugar', 'escola', 'vai ser onde', 'em que lugar'],
-        resposta: "O retiro será na escola João Bosco aqui em Paulo Afonso, no centro da cidade! \n Vila Poty, Paulo Afonso - BA, 48601-430 - *Escola Municipal João Bosco Ribeiro*📍"
+        resposta: "O retiro será numa escola aqui em Paulo Afonso! Estamos finalizando os detalhes do local e logo avisaremos no Instagram e no grupo do WhatsApp. Fique de olho! 📍"
     },
     {
         id: 'consultar_valor',
@@ -167,36 +201,11 @@ const memoria = [
         funcaoResposta: () => `A inscrição custa R$ ${config.VALOR_INSCRICAO}.\n\n💸 O pagamento pode ser feito por PIX:\nChave: *${config.CHAVE_PIX}* (em nome de ${config.NOME_CONTATO_PIX}).\n\nDepois é só mandar o comprovante aqui mesmo no chat que eu cuido do resto por você! 😉`
     },
     {
-    id: 'data_e_horario',
-    chaves: [], // Não precisa de chaves, será acionado apenas pelo menu
-    funcaoResposta: () => {
-        // Busca as respostas de data e horário que já existem
-        const data = memoria.find(i => i.id === 'consultar_data').resposta;
-        const horario = memoria.find(i => i.id === 'horario').resposta;
-        // Junta as duas numa única mensagem
-        return `${data}\n\n${horario}`;
-    }
-    },
-    {
         id: 'ajuda',
         chaves: ['ajuda', 'comandos', 'opções', 'menu', 'começar'],
-        resposta: `Aqui está uma lista de como posso ajudar:\n\n` +
-        `*INFORMAÇÕES GERAIS* 📢\n` +
-        `1️⃣ Sobre o retiro 🏕️\n` +
-        `2️⃣ O que é o JCC? 🤔\n` +
-        `3️⃣ Data e Horário 🗓️\n` +
-        `4️⃣ Local do retiro 📍\n` +
-        `5️⃣ Idade mínima 👶\n\n` +
-        `*INSCRIÇÃO* 📝\n` +
-        `6️⃣ Como fazer a minha inscrição ✍️\n` +
-        `7️⃣ Valor e Pagamento 💰\n\n` +
-        `*PREPARAÇÃO* 🎒\n` +
-        `8️⃣ O que levar 🎽\n` +
-        `9️⃣ Regras sobre o uso de celulares 📵\n\n` +
-        `*OUTROS* ✨\n` +
-        `🔟 Entrar no grupo do WhatsApp 💬\n` +
-        `1️⃣1️⃣ Falar com a organização 📞\n\n` +
-        `Basta enviar o número da sua dúvida!`
+        resposta: construirTextoMenu
     },
 ];
-module.exports = memoria;
+
+// Exporta tanto a 'memoria' quanto a estrutura do menu
+module.exports = { memoria, MENU_PRINCIPAL };
