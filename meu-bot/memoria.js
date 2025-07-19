@@ -14,9 +14,9 @@ const MENU_PRINCIPAL = [
     { numero: 4, secao: 'VIDA NO RETIRO', emoji: '🎒', titulo: 'O que levar para o retiro', id_intent: 'levar' },
     { numero: 5, secao: 'VIDA NO RETIRO', emoji: '🍔', titulo: 'Alimentação no retiro', id_intent: 'comida_bebida' },
     { numero: 6, secao: 'VIDA NO RETIRO', emoji: '🎉', titulo: 'Atividades e programação', id_intent: 'saber_atividades' },
-    { numero: 7, secao: 'VIDA NO RETIRO', emoji: '📜', titulo: 'Regras do retiro', id_intent: 'roupa_modesta' },
+    { numero: 7, secao: 'VIDA NO RETIRO', emoji: '📜', titulo: 'O que é roupa modesta?', id_intent: 'roupa_modesta' },
 
-    { numero: 8, secao: 'SOBRE E CONTATO', emoji: '❓', titulo: 'O que é o Retiro / JCC?', id_intent: 'sobre_retiro' },
+    { numero: 8, secao: 'SOBRE E CONTATO', emoji: '❓', titulo: 'O que é o Retiro?', id_intent: 'sobre_retiro' },
     { numero: 9, secao: 'SOBRE E CONTATO', emoji: '⏳', titulo: 'Quanto tempo falta?', id_intent: 'contagem' },
     { numero: 10, secao: 'SOBRE E CONTATO', emoji: '💬', titulo: 'Falar com um organizador', id_intent: 'falar_humano' },
     { numero: 11, secao: 'SOBRE E CONTATO', emoji: '🔗', titulo: 'Entrar no grupo do WhatsApp', id_intent: 'grupo_whatsapp' },
@@ -60,7 +60,7 @@ const memoria = [
     {
         id: 'menor_idade',
         chaves: ['filho', 'filha', 'menor', 'autorização', 'autorizacao', 'responsável', 'responsavel'],
-        resposta: (nome) => `Oi, ${nome}! Que bênção que o(a) jovem que você representa quer participar! 🙌\n\nPara garantir a segurança e o consentimento de todos, a regra é que *menores de 18 anos façam a inscrição presencialmente*, junto com o pai, mãe ou responsável legal.\n\n📍 **Onde?** No nosso grupo de oração, toda segunda-feira, às 19h30, no salão da Paróquia São Francisco.\n\n*Exceções são possíveis?*\nEm casos muito específicos onde a presença do responsável é impossível, a situação deve ser *previamente conversada com a organização*. Se for aprovado, será necessário enviar uma foto da ficha de inscrição impressa e devidamente assinada pelo responsável.\n\nPara tratar de uma exceção, por favor, *fale com um humano*.`
+        resposta: (nome) => `Oi, ${nome}! Que bênção que o(a) jovem que você representa quer participar! 🙌\n\nPara garantir a segurança e o consentimento de todos, a regra é que *menores de 18 anos façam a inscrição presencialmente*, junto com o pai, mãe ou responsável legal.\n\n📍 **Onde?** No nosso grupo de oração, toda segunda-feira, às 19h30, no salão da Paróquia São Francisco.\n\n*Exceções são possíveis?*\nEm casos muito específicos onde a presença do responsável é impossível, a situação deve ser *previamente conversada com a organização*. Para tratar de uma exceção, por favor, *fale com um humano*.`
     },
     {
         id: 'roupa_modesta',
@@ -84,8 +84,28 @@ const memoria = [
     {
         id: 'fazer_inscricao',
         chaves: ['ficha', 'pdf', 'formulario', 'inscrever', 'inscrição', 'participar', 'como faz', 'entrar', 'quero ir'],
-        resposta: (nome) => `Que alegria saber do seu interesse, ${nome}! 😊\n\n⚠️ *ATENÇÃO: Se o participante for menor de 18 anos, a inscrição deve ser feita obrigatoriamente de forma PRESENCIAL, acompanhado(a) de um responsável.*\n\nEntendido isso, como você prefere continuar?\n\n1️⃣ *Online (Apenas para maiores de 18 anos)*\nEu envio-lhe a ficha, você preenche, paga por PIX e envia-me o comprovante.\n\n2️⃣ *Presencialmente*\nVocê pode ir ao nosso grupo de oração (toda segunda-feira, às 19h30, no salão da paróquia) e fazer a sua inscrição e pagamento diretamente com a nossa equipe.\n\nDigite *1* para Online ou *2* para Presencial.`
-    },
+        resposta: (nome) => `Que alegria saber do seu interesse, ${nome}! 😊
+
+        ⚠️ *ATENÇÃO: Se o participante for menor de 18 anos, a inscrição deve ser feita obrigatoriamente de forma PRESENCIAL, acompanhado(a) de um responsável.*
+
+        Entendido isso, como você prefere continuar?
+
+        1️⃣ *Online (Apenas para maiores de 18 anos)*  
+        Eu envio-lhe a ficha, você preenche, paga por PIX e envia-me o comprovante.
+
+        2️⃣ *Presencialmente*  
+        Você pode ir ao nosso grupo de oração (toda segunda-feira, às 19h30, no salão da paróquia) e fazer a sua inscrição e pagamento diretamente com a nossa equipe.
+
+        Digite *1* para Online ou *2* para Presencial.
+
+        ⚠️ *Regras da inscrição:*
+        - A inscrição só será confirmada mediante pagamento da taxa (*R$50*).
+        - Inscrição deve ser confirmada até *20/08*.
+        - *As vagas são limitadas.*
+        - Para *menores de 18 anos* é necessária a autorização dos pais.
+        - Em caso de *desistência*, será devolvido apenas *50% da taxa.*`
+        },
+
     {
         id: 'contagem',
         chaves: ['quanto falta', 'contagem', 'faltam quantos dias'],
@@ -107,7 +127,7 @@ const memoria = [
     {
         id: 'inscricao_online_detalhes',
         chaves: [],
-        resposta: `Combinado! O processo online é bem simples e feito em 2 passos:\n\n1️⃣ *Preencha a Ficha:*\nBaixe e preencha a ficha de inscrição neste link:\nhttp://ayslanhugo.pythonanywhere.com/static/ficha_inscricao.pdf\n\n2️⃣ *Faça o Pagamento:*\nA inscrição custa R$ ${config.VALOR_INSCRICAO}.\nO pagamento pode ser feito por PIX:\nChave: *${config.CHAVE_PIX}* (em nome de ${config.NOME_CONTATO_PIX}).\n\nDepois de pagar, é só me enviar o *comprovante* aqui no chat junto com a palavra 'comprovante' que eu finalizo para você. 😉`
+        resposta: `Combinado! O processo online é bem simples e feito em 2 passos:\n\n1️⃣ *Preencha a Ficha:*\nPreencha a ficha de inscrição neste link:\nhttps://forms.gle/S8baDSEBFoV6E84G6\n\n2️⃣ *Faça o Pagamento:*\nA inscrição custa R$ ${config.VALOR_INSCRICAO}.\nO pagamento pode ser feito por PIX:\nChave: *${config.CHAVE_PIX}* (em nome de ${config.NOME_CONTATO_PIX}).\n\nDepois de pagar, é só me enviar o *comprovante* aqui no chat junto com a palavra 'comprovante' na legenda do arquivo que eu finalizo para você. 😉`
     },
     {
         id: 'sobre_jcc',
@@ -158,7 +178,7 @@ const memoria = [
     },
     {
         id: 'saudacao',
-        chaves: ['oi', 'oie', 'oii', 'oiii', 'olá', 'e aí', 'tudo bem', 'opa', 'bom dia', 'boa tarde', 'boa noite'],
+        chaves: ['oi', 'oie', 'oii', 'oiii', 'olá', 'e aí', 'tudo bem', 'opa', 'bom dia', 'boa tarde', 'boa noite', 'oi jcc', 'olá jcc', 'oi retiro', 'olá retiro', 'bom dia retiro', 'boa tarde retiro', 'boa noite retiro', 'oi assistente', 'olá assistente', 'bom dia assistente', 'boa tarde assistente', 'boa noite assistente', 'olá jcc', 'oi jcc', 'bom dia jcc', 'boa tarde jcc', 'boa noite jcc'],
         resposta: (nome) => {
             const saudacaoInicial = `Olá, ${nome}! A paz de Cristo! 🙏 Eu sou o assistente virtual do retiro Kerigmático JCC.\n\n`;
             return saudacaoInicial + construirTextoMenu();
@@ -172,7 +192,7 @@ const memoria = [
     {
         id: 'despedida',
         chaves: ['tchau', 'até mais', 'obrigado', 'obg', 'vlw', 'valeu', 'falou', 'de nada', 'disponha'],
-        resposta: (nome) => [`Disponha, ${nome}! Que Deus te abençoe muito! 🙌`, `Foi uma alegria te ajudar, ${nome}! Já aproveita e segue nosso Insta: ${config.INSTAGRAM_LINK} 😉`, `Fico feliz em poder ajudar! Te espero no retiro com o coração aberto! ❤️`, `Tamo junto, ${nome}! E se quiser ir entrando no clima, ouve nossa playlist especial: ${config.PLAYLIST_LINK}`, `Até logo, ${nome}! Se precisar, é só chamar. E entra no nosso grupo: ${config.WHATSAPP_GROUP_LINK}`]
+        resposta: (nome) => [`Disponha, ${nome}! Que Deus te abençoe muito! 🙌`, `Foi uma alegria te ajudar, ${nome}! Já aproveita e segue nosso Insta: ${config.INSTAGRAM_LINK} 😉`, `Fico feliz em poder ajudar! Te espero no retiro com o coração aberto! ❤️`, `Tamo junto, ${nome}!`, `Até logo, ${nome}! Se precisar, é só chamar. E entra no nosso grupo: ${config.WHATSAPP_GROUP_LINK}`]
     },
     {
         id: 'consultar_data',
@@ -193,7 +213,7 @@ const memoria = [
     {
         id: 'consultar_local',
         chaves: ['local', 'endereço', 'onde', 'lugar', 'escola', 'vai ser onde', 'em que lugar'],
-        resposta: "O retiro será numa escola aqui em Paulo Afonso! Estamos finalizando os detalhes do local e logo avisaremos no Instagram e no grupo do WhatsApp. Fique de olho! 📍"
+        resposta: "O retiro será na Escola Municipal João Bosco aqui em Paulo Afonso! \n Vila Poty, Paulo Afonso - BA, 48601-430📍"
     },
     {
         id: 'consultar_valor',
@@ -207,5 +227,4 @@ const memoria = [
     },
 ];
 
-// Exporta tanto a 'memoria' quanto a estrutura do menu
 module.exports = { memoria, MENU_PRINCIPAL };

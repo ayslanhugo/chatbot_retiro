@@ -7,12 +7,11 @@ module.exports = {
 
     // --- Constantes de Conteúdo (de memoria.js) ---
     VALOR_INSCRICAO: "50,00",
-    CHAVE_PIX: "contato@jcc.com",
-    NOME_CONTATO_PIX: "Maria da Tesouraria",
+    CHAVE_PIX: "75 98703-9736",
+    NOME_CONTATO_PIX: "Rone Pereira de Sá",
     DATA_RETIRO: '2025-08-22',
     INSTAGRAM_LINK: "https://www.instagram.com/jovensacaminhodoceu/",
     WHATSAPP_GROUP_LINK: "https://chat.whatsapp.com/KssiLdJpmbr9Jmuh2d0ieU",
-    PLAYLIST_LINK: "https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M",
     CONTATO_HUMANO_NOME: "Any",
     CONTATO_HUMANO_NUMERO: "5575992022434",
 
