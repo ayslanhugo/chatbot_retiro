@@ -1,4 +1,4 @@
-// memoria.js - VERSÃO FINAL COM TODOS OS IDs E CONSTANTES CORRIGIDOS E RESPOSTAS COMPLETAS
+// memoria.js
 
 const moment = require('moment');
 const config = require('./config.js'); 
@@ -99,7 +99,7 @@ const memoria = [
     {
         id: 'dormir_local',
         chaves: ['dormir', 'pernoitar', 'preciso dormir', 'tenho que dormir', 'é obrigatório dormir', 'posso ir embora'],
-        resposta: "Sim! O retiro é uma experiência de imersão completa, e o pernoite no local faz parte dessa vivência. Isso fortalece a comunhão e nos ajuda a viver intensamente cada momento. Por isso, pedimos que leve colchonete e roupas de cama. 😊",
+        resposta: "O retiro é uma experiência de imersão completa, e o pernoite no local faz parte dessa vivência. Isso fortalece a comunhão e nos ajuda a viver intensamente cada momento. Por isso, pedimos que leve colchonete e roupas de cama. 😊",
         resposta_seguimento: "Com certeza! Além do colchonete, lembre-se de trazer um lençol, um travesseiro e um cobertor para garantir que você tenha uma noite de sono confortável e revigorante. 🙏"
     },
     {
@@ -118,9 +118,17 @@ const memoria = [
         resposta: `Entre no nosso grupo do WhatsApp para não perder nenhuma novidade! Vai ser ótimo ter você com a gente lá. 💌\n\n📲 ${config.WHATSAPP_GROUP_LINK}`
     },
     {
-        id: 'saudacao',
-        chaves: ['oi', 'oie', 'oii', 'oiii', 'olá', 'e aí', 'tudo bem', 'opa', 'bom dia', 'boa tarde', 'boa noite'],
-        resposta: (nome) => [`Oi, ${nome}! Que bom te ver por aqui! 😊 Eu sou o assistente virtual do retiro Kerigmático JCC. Em que posso te ajudar hoje?`, `Olá, ${nome}! A paz de Cristo! 🙏 Estou aqui para te ajudar com tudo que precisar sobre o retiro. Bora lá?`]
+    id: 'saudacao',
+    chaves: ['oi', 'oie', 'oii', 'oiii', 'olá', 'e aí', 'tudo bem', 'opa', 'bom dia', 'boa tarde', 'boa noite'],
+    funcaoResposta: (nomeUsuario) => {
+        // Encontra o texto da ajuda que acabámos de formatar
+        const menuDeAjuda = memoria.find(item => item.id === 'ajuda').resposta;
+
+        // Monta a mensagem de boas-vindas completa
+        const saudacaoInicial = `Olá, ${nomeUsuario}! A paz de Cristo! 🙏\nEu sou o RCC (robô a caminho do céu), e estou aqui para te auxiliar na preparação para o retiro Kerigmático JCC.\n\n`;
+
+        return saudacaoInicial + menuDeAjuda;
+    }
     },
     {
         id: 'confirmacao_positiva',
@@ -151,7 +159,7 @@ const memoria = [
     {
         id: 'consultar_local',
         chaves: ['local', 'endereço', 'onde', 'lugar', 'escola', 'vai ser onde', 'em que lugar'],
-        resposta: "O retiro será numa escola aqui em Paulo Afonso! Estamos finalizando os detalhes do local e logo avisaremos no Instagram e no grupo do WhatsApp. Fique de olho! 📍"
+        resposta: "O retiro será na escola João Bosco aqui em Paulo Afonso, no centro da cidade! \n Vila Poty, Paulo Afonso - BA, 48601-430 - *Escola Municipal João Bosco Ribeiro*📍"
     },
     {
         id: 'consultar_valor',
@@ -159,9 +167,36 @@ const memoria = [
         funcaoResposta: () => `A inscrição custa R$ ${config.VALOR_INSCRICAO}.\n\n💸 O pagamento pode ser feito por PIX:\nChave: *${config.CHAVE_PIX}* (em nome de ${config.NOME_CONTATO_PIX}).\n\nDepois é só mandar o comprovante aqui mesmo no chat que eu cuido do resto por você! 😉`
     },
     {
+    id: 'data_e_horario',
+    chaves: [], // Não precisa de chaves, será acionado apenas pelo menu
+    funcaoResposta: () => {
+        // Busca as respostas de data e horário que já existem
+        const data = memoria.find(i => i.id === 'consultar_data').resposta;
+        const horario = memoria.find(i => i.id === 'horario').resposta;
+        // Junta as duas numa única mensagem
+        return `${data}\n\n${horario}`;
+    }
+    },
+    {
         id: 'ajuda',
         chaves: ['ajuda', 'comandos', 'opções', 'menu', 'começar'],
-        resposta: `Claro! Você pode perguntar sobre qualquer um desses tópicos:\n\n- O que é o *JCC*?\n- *Atividades* do retiro\n- *Idade* mínima\n- Preciso *dormir* no local?\n- Posso usar *celular*?\n- O que é *roupa modesta*?\n- *Data* e *Horário*\n- *Local* do retiro\n- *Valor* da inscrição\n- Como fazer minha *inscrição*\n- Falar com a *organização*\n- Entrar no *grupo do WhatsApp*\n- Ver a *contagem* regressiva ⏳\n\nÉ só mandar uma palavra que eu explico tudo! 😉`
+        resposta: `Aqui está uma lista de como posso ajudar:\n\n` +
+        `*INFORMAÇÕES GERAIS* 📢\n` +
+        `1️⃣ Sobre o retiro 🏕️\n` +
+        `2️⃣ O que é o JCC? 🤔\n` +
+        `3️⃣ Data e Horário 🗓️\n` +
+        `4️⃣ Local do retiro 📍\n` +
+        `5️⃣ Idade mínima 👶\n\n` +
+        `*INSCRIÇÃO* 📝\n` +
+        `6️⃣ Como fazer a minha inscrição ✍️\n` +
+        `7️⃣ Valor e Pagamento 💰\n\n` +
+        `*PREPARAÇÃO* 🎒\n` +
+        `8️⃣ O que levar 🎽\n` +
+        `9️⃣ Regras sobre o uso de celulares 📵\n\n` +
+        `*OUTROS* ✨\n` +
+        `🔟 Entrar no grupo do WhatsApp 💬\n` +
+        `1️⃣1️⃣ Falar com a organização 📞\n\n` +
+        `Basta enviar o número da sua dúvida!`
     },
 ];
 module.exports = memoria;

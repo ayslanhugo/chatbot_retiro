@@ -1,4 +1,4 @@
-// index.js - VERSÃO FINAL, COMPLETA E SEM ABREVIAÇÕES
+// index.js
 
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
@@ -16,7 +16,19 @@ const FLOOD_COOLDOWN_SECONDS = 60;
 const FRASES_DE_SEGUIMENTO = ['e o que mais?', 'fale mais', 'me diga mais', 'continue', 'e depois?', 'mais detalhes'];
 const TOPICOS_PRINCIPAIS = ['data', 'local', 'valor', 'horario', 'levar', 'idade', 'atividades', 'dormir_local', 'sobre_jcc', 'sobre_retiro'];
 const PALAVRAS_CHAVE_COMPROVANTE = ['comprovante', 'pagamento', 'pix', 'paguei', 'inscrição', 'recibo', 'transferência', 'transferencia', 'tá pago', 'ta pago', 'comprovando'];
-
+const MENU_MAP = {
+    '1': 'sobre_retiro',
+    '2': 'sobre_jcc',
+    '3': 'data_e_horario', 
+    '4': 'consultar_local',
+    '5': 'idade',
+    '6': 'fazer_inscricao',
+    '7': 'consultar_valor',
+    '8': 'levar',
+    '9': 'uso_celular',
+    '10': 'grupo_whatsapp',
+    '11': 'falar_humano'
+};
 
 // --- Funções Auxiliares ---
 function respostaAleatoria(respostas) {
@@ -122,6 +134,31 @@ async function handleMessage(msg, userContext, client) {
     const contato = await msg.getContact();
     const nomeUsuario = contato.pushname ? contato.pushname.split(' ')[0] : contato.number;
 
+    const textoLimpo = texto.trim();
+    if (MENU_MAP[textoLimpo]) {
+        const idDoTopico = MENU_MAP[textoLimpo];
+        const item = memoria.find(m => m.id === idDoTopico);
+
+        if (item) {
+            let respostaFinal;
+            if (item.funcaoResposta) {
+                // Passamos nomeUsuario para o caso da função precisar dele
+                respostaFinal = item.funcaoResposta(nomeUsuario); 
+            } else if (typeof item.resposta === 'function') {
+                respostaFinal = respostaAleatoria(item.resposta(nomeUsuario));
+            } else {
+                respostaFinal = respostaAleatoria(item.resposta);
+            }
+            
+            if (idDoTopico === 'fazer_inscricao') {
+            context.awaitingRegistrationChoice = true;
+            }
+            
+            await msg.reply(respostaFinal);
+            return; // Para o processamento aqui, pois já encontramos a resposta
+        }
+    }
+
     if (FRASES_DE_SEGUIMENTO.includes(texto.toLowerCase())) {
         if (context.lastTopic) {
             const ultimoTopicoInfo = memoria.find(item => item.id === context.lastTopic);
@@ -131,6 +168,19 @@ async function handleMessage(msg, userContext, client) {
                 return;
             }
         }
+    }
+
+    if (context.lastOffer === 'explicar_kerigma') {
+        const palavrasPositivas = ['sim', 'gostaria', 'quero', 'pode', 'explica', 'claro', 'por que', 'pq', 'qual o significado'];
+        const palavrasNegativas = ['não', 'nao', 'n', 'depois', 'agora nao', 'deixa'];
+        context.lastOffer = null; // Limpa o contexto para a conversa continuar
+        if (smartMatch(texto, palavrasPositivas)) {
+            const kerigmaInfo = memoria.find(item => item.id === 'kerigma_explicacao');
+            if (kerigmaInfo) await msg.reply(kerigmaInfo.resposta);
+        } else if (smartMatch(texto, palavrasNegativas)) {
+            await msg.reply("Tudo bem! Se mudar de ideias, é só me perguntar sobre o significado do nome do retiro. Estou por aqui! 😉");
+        }
+        return;
     }
     if (context.awaitingRegistrationChoice) {
         const escolhaOnline = ['1', 'online'];
@@ -191,10 +241,23 @@ async function handleMessage(msg, userContext, client) {
             return;
         }
         if (intentName === 'Default Welcome Intent') {
-            const item = memoria.find(m => m.id === 'saudacao');
-            if (item) await msg.reply(respostaAleatoria(item.resposta(nomeUsuario)));
-            return;
+    const item = memoria.find(m => m.id === 'saudacao');
+    if (item) {
+        let respostaFinal;
+        // Verifica se existe uma funcaoResposta (o nosso novo padrão para a saudação)
+        if (item.funcaoResposta) {
+            respostaFinal = item.funcaoResposta(nomeUsuario);
+        } 
+        // Lógica de fallback para outros tipos de resposta, por segurança
+        else if (typeof item.resposta === 'function') {
+            respostaFinal = respostaAleatoria(item.resposta(nomeUsuario));
+        } else {
+            respostaFinal = respostaAleatoria(item.resposta);
         }
+        await msg.reply(respostaFinal);
+    }
+    return;
+}
         if (intentName === 'cancelar_acao') {
             userContext[from] = {
                 lastOffer: null,
@@ -223,7 +286,7 @@ async function handleMessage(msg, userContext, client) {
             if (TOPICOS_PRINCIPAIS.includes(itemParaResponder.id) && !context.offeredKerigma && !respostaFinal.includes('https://wa.me/')) {
                 respostaFinal += `\n\nA propósito, gostaria de saber por que o nosso retiro se chama 'Kerigmático'?`;
                 context.offeredKerigma = true;
-                context.lastOffer = 'sobre_retiro';
+                context.lastOffer = 'kerigma_explicacao';
             }
             await chat.sendStateTyping();
             await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 500));
