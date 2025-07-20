@@ -100,7 +100,7 @@ const memoria = [
 
         ⚠️ *Regras da inscrição:*
         - A inscrição só será confirmada mediante pagamento da taxa (*R$50*).
-        - Inscrição deve ser confirmada até *20/08*.
+        - Inscrição deve ser confirmada até *18/08*.
         - *As vagas são limitadas.*
         - Para *menores de 18 anos* é necessária a autorização dos pais.
         - Em caso de *desistência*, será devolvido apenas *50% da taxa.*`
@@ -127,7 +127,7 @@ const memoria = [
     {
         id: 'inscricao_online_detalhes',
         chaves: [],
-        resposta: `Combinado! O processo online é bem simples e feito em 2 passos:\n\n1️⃣ *Preencha a Ficha:*\nPreencha a ficha de inscrição neste link:\nhttps://forms.gle/S8baDSEBFoV6E84G6\n\n2️⃣ *Faça o Pagamento:*\nA inscrição custa R$ ${config.VALOR_INSCRICAO}.\nO pagamento pode ser feito por PIX:\nChave: *${config.CHAVE_PIX}* (em nome de ${config.NOME_CONTATO_PIX}).\n\nDepois de pagar, é só me enviar o *comprovante* aqui no chat junto com a palavra 'comprovante' na legenda do arquivo que eu finalizo para você. 😉`
+        resposta: `Combinado! O processo online é bem simples e feito em 2 passos:\n\n1️⃣ *Preencha a Ficha:*\nPreencha a ficha de inscrição neste link:\n https://forms.gle/JaGuPgwzHoCesr5Z9 \n\n2️⃣ *Faça o Pagamento:*\nA inscrição custa R$ ${config.VALOR_INSCRICAO}.\nO pagamento pode ser feito por PIX:\nChave: *${config.CHAVE_PIX}* (em nome de ${config.NOME_CONTATO_PIX}).\n\nDepois de pagar, é só me enviar o *comprovante* aqui no chat junto com a palavra 'comprovante' na legenda do arquivo que eu finalizo para você. 😉`
     },
     {
         id: 'sobre_jcc',
