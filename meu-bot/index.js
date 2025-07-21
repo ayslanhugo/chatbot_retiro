@@ -152,7 +152,7 @@ async function handleMessage(msg, userContext, client) {
         const dataParaPlanilha = [new Date().toLocaleString('pt-BR', { timeZone: 'America/Bahia' }), detalhes[0] || 'Não informado', detalhes[1] || 'Não informado', contato.number, detalhes[2] || 'N/A'];
         context.awaitingDetails = false;
         if (await appendToSheet(dataParaPlanilha)) {
-            await msg.reply(`Perfeito! Inscrição pré-confirmada e dados guardados. A equipa irá verificar o seu comprovante e em breve receberá a confirmação final. Estamos muito felizes por tê-lo(a) conosco! 🙌`);
+            await msg.reply(`Perfeito! Inscrição confirmada e dados guardados. A equipa irá verificar o seu comprovante. Estamos muito felizes por tê-lo(a) conosco! 🙌`);
         } else {
             await msg.reply(`Obrigado pelos dados! Tive um problema ao guardar na nossa planilha. Não se preocupe, a sua pré-inscrição está registada e a equipa fará o processo manualmente. 👍`);
         }
