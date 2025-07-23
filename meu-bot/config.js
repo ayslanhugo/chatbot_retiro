@@ -6,6 +6,12 @@ module.exports = {
     SPREADSHEET_ID: "1EMo7FlITs6MUzk8ODsLbjn4mroTnO3_thRkr0TfJylw",
     TESOUREIRO_ID: '557588181776@c.us',
 
+    ADMIN_IDS: [
+        '557588589655@c.us',
+        '557591884047@c.us',
+        '557592022434@c.us'
+    ],
+
     // --- Constantes de Conteúdo (de memoria.js) ---
     VALOR_INSCRICAO: "50,00",
     CHAVE_PIX: "75 98703-9736",

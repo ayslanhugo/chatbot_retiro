@@ -50,6 +50,34 @@ function smartMatch(texto, chaves) {
     return false;
 }
 
+async function getSheetData() {
+    try {
+        const auth = new google.auth.GoogleAuth({ keyFile: 'credentials.json', scopes: 'https://www.googleapis.com/auth/spreadsheets.readonly' });
+        const sheets = google.sheets({ version: 'v4', auth });
+        const response = await sheets.spreadsheets.values.get({
+            spreadsheetId: config.SPREADSHEET_ID,
+            range: 'Página1!A:A', // Lê apenas a primeira coluna para contar as linhas
+        });
+        return response.data.values || [];
+    } catch (error) {
+        console.error('[SHEETS] Erro ao ler a planilha:', error.message);
+        return null;
+    }
+}
+
+function getUptime() {
+    const uptimeSeconds = Math.floor((Date.now() - botStartTime) / 1000);
+    const days = Math.floor(uptimeSeconds / 86400);
+    const hours = Math.floor((uptimeSeconds % 86400) / 3600);
+    const minutes = Math.floor((uptimeSeconds % 3600) / 60);
+    
+    let uptimeString = '';
+    if (days > 0) uptimeString += `${days}d `;
+    if (hours > 0) uptimeString += `${hours}h `;
+    if (minutes > 0) uptimeString += `${minutes}m`;
+    return uptimeString.trim() || 'menos de um minuto';
+}
+
 async function appendToSheet(data) {
     try {
         const auth = new google.auth.GoogleAuth({ keyFile: 'credentials.json', scopes: 'https://www.googleapis.com/auth/spreadsheets' });
@@ -124,12 +152,44 @@ async function handleMessage(msg, userContext, client) {
         return;
     }
     
-    // Inicialização do contexto do usuário
+    if (texto.startsWith('/')) {
+        if (config.ADMIN_IDS && config.ADMIN_IDS.includes(from)) {
+            const command = texto.split(' ')[0];
+
+            if (command === '/status') {
+                const uptime = getUptime();
+                await msg.reply(`🤖 Olá, admin! Estou online e funcionando.\n*Tempo de atividade:* ${uptime}.`);
+            } else if (command === '/stats') {
+                await msg.reply('📊 Consultando as estatísticas... um momento.');
+                const data = await getSheetData();
+                if (data) {
+                    // Assumindo que a planilha tem um cabeçalho, o total de inscritos é o total de linhas - 1
+                    const totalInscritos = data.length > 1 ? data.length - 1 : 0; 
+                    await msg.reply(`*Total de inscritos na planilha:* ${totalInscritos}`);
+                } else {
+                    await msg.reply('❌ Desculpe, não consegui aceder à planilha para obter as estatísticas.');
+                }
+            } else {
+                await msg.reply(`Comando de admin "${command}" não reconhecido. Comandos disponíveis:\n\n*/status* - Verifica se o bot está online.\n*/stats* - Mostra o número de inscritos.`);
+            }
+        } else {
+            console.log(`[SEGURANÇA] Comando de admin "${texto}" bloqueado para o usuário ${from}.`);
+        }
+        return; 
+    }
+
     if (!userContext[from]) {
         userContext[from] = { 
-            lastOffer: null, offeredKerigma: false, awaitingDetails: false, 
-            awaitingRegistrationChoice: false, isDiscussingMinor: false, lastTopic: null, 
-            awaitingMenuChoice: false, awaitingConfirmation: false, pendingRegistrationData: null 
+            lastOffer: null, 
+            offeredKerigma: false, 
+            awaitingDetails: false, 
+            awaitingRegistrationChoice: false, 
+            isDiscussingMinor: false, 
+            lastTopic: null, 
+            awaitingMenuChoice: false, 
+            awaitingConfirmation: false, 
+            pendingRegistrationData: null,
+            pendingReceiptMsg: null
         };
     }
     const context = userContext[from];
@@ -141,27 +201,54 @@ async function handleMessage(msg, userContext, client) {
     // NÍVEL 1: Respostas a perguntas diretas do bot (contextos de alta prioridade)
 
     if (context.awaitingConfirmation) {
-        const escolha = texto.toLowerCase();
-        if (['1', 'sim', 'confirmar'].includes(escolha)) {
-            const dataParaSalvar = context.pendingRegistrationData;
-            if (await appendToSheet(dataParaSalvar)) {
-                await msg.reply(`Perfeito! Inscrição confirmada e dados guardados. Estamos muito felizes por tê-lo(a) connosco! 🙌`);
+    const escolha = texto.toLowerCase();
+    if (['1', 'sim', 'confirmar'].includes(escolha)) {
+        
+        const dataParaSalvar = context.pendingRegistrationData;
+        const nomeCompletoInscrito = dataParaSalvar[1];
+
+        try {
+            const comprovanteMsg = context.pendingReceiptMsg;
+            if (comprovanteMsg) {
+                await comprovanteMsg.forward(config.GRUPO_ID_ADMIN);
+
+                const tesoureiroId = config.TESOUREIRO_ID;
+                const tesoureiroNumber = tesoureiroId.split('@')[0];
+                const textoMencao = `📄 Inscrição confirmada!\n\n*Nome:* ${nomeCompletoInscrito}\n*Número:* ${from.replace('@c.us', '')}\n\nTesoureiro: @${tesoureiroNumber}, por favor, confirme o recebimento.`;
+                
+                await client.sendMessage(config.GRUPO_ID_ADMIN, textoMencao, { mentions: [tesoureiroId] });
             } else {
-                await msg.reply(`Obrigado pelos dados! Tive um problema ao guardar na nossa planilha. Não se preocupe, a sua pré-inscrição está registada e a equipa fará o processo manualmente. 👍`);
+                throw new Error("Mensagem de comprovante não encontrada no contexto.");
             }
-            context.awaitingConfirmation = false;
-            context.pendingRegistrationData = null;
-        } else if (['2', 'nao', 'não', 'corrigir', 'corrijir'].includes(escolha)) {
-            await msg.reply('Entendido. Por favor, envie os dados corrigidos, cada um numa linha, como no exemplo a seguir:\n\nSeu Nome Completo\nseu@email.com\nNome do Responsável (ou digite "N/A")');
-            context.awaitingConfirmation = false;
-            context.pendingRegistrationData = null;
-            context.awaitingDetails = true;
-        } else {
-            await msg.reply("Não entendi a sua resposta. Por favor, digite *1 para Confirmar* ou *2 para Corrigir* os dados.");
+        } catch (adminError) {
+            console.error("[ERRO ADMIN] Falha ao enviar para o grupo de admin:", adminError);
+            await msg.reply("Tive um problema para notificar a equipe, mas não se preocupe, sua inscrição foi recebida e será tratada manualmente.");
         }
-        return;
+
+        if (await appendToSheet(dataParaSalvar)) {
+            await msg.reply(`Perfeito! Inscrição confirmada e dados guardados. A equipe irá verificar o seu comprovante e em breve você receberá a confirmação final. 🙌`);
+        } else {
+            await msg.reply(`Obrigado pelos dados! Tive um problema ao guardar na nossa planilha, mas a equipe já foi notificada. Sua inscrição está segura! 👍`);
+        }
+        
+        // Resetando o contexto após conclusão
+        context.awaitingConfirmation = false;
+        context.pendingRegistrationData = null;
+        context.pendingReceiptMsg = null;
+
+    } else if (['2', 'nao', 'não', 'corrigir', 'corrijir'].includes(escolha)) {
+        await msg.reply('Entendido. Para garantir que o comprovante correto seja associado aos dados corretos, vamos recomeçar. Por favor, envie a imagem do comprovante novamente.');
+        context.awaitingConfirmation = false;
+        context.pendingRegistrationData = null;
+        context.pendingReceiptMsg = null;
+        context.awaitingDetails = false;
+    } else {
+        await msg.reply("Não entendi a sua resposta. Por favor, digite *1 para Confirmar* ou *2 para Corrigir* os dados.");
     }
-    
+    return;
+}
+
+
     // Bloco para escolher entre Inscrição Online, Presencial ou Cancelar
     if (context.awaitingRegistrationChoice) {
         const escolhaOnline = ['1', 'online'];
@@ -208,32 +295,32 @@ async function handleMessage(msg, userContext, client) {
 
     // NÍVEL 2: Comandos com gatilhos específicos (envio de mídia, frases de seguimento)
     if (msg.hasMedia && PALAVRAS_CHAVE_COMPROVANTE.some(p => texto.toLowerCase().includes(p))) {
-        const isImage = msg.type === 'image';
-        const isPDF = msg.type === 'document' && msg._data.filename && msg._data.filename.toLowerCase().endsWith('.pdf');
-        if (!isImage && !isPDF) {
-            await msg.reply('Obrigado por enviar! No entanto, só consigo processar comprovantes em formato de imagem (JPG, PNG) ou PDF. Poderia enviar o ficheiro no formato correto, por favor? 🙏');
-            return;
-        }
-        try {
-            await msg.forward(config.GRUPO_ID_ADMIN);
+    const mimetype = msg._data.mimetype || '';
+    const filename = msg._data.filename || '';
+    const isImage = msg.type === 'image' || mimetype.startsWith('image/');
+    const isPDF = mimetype === 'application/pdf' || filename.toLowerCase().endsWith('.pdf');
 
-            const tesoureiroId = config.TESOUREIRO_ID;
-            const tesoureiroNumber = tesoureiroId.split('@')[0];
-            const textoMencao = `📄 Novo comprovante!\n\n*De:* ${contato.pushname || nomeUsuario}\n*Número:* ${contato.number}\n\nTesoureiro: @${tesoureiroNumber}, por favor, confirme o recebimento.`;
-
-            await client.sendMessage(config.GRUPO_ID_ADMIN, textoMencao, {
-                mentions: [tesoureiroId]
-            });
-            
-            const confirmacaoUsuario = respostaAleatoria([`Obrigado, ${nomeUsuario}! Comprovante recebido. 🙏\n\nPara finalizar, envie os seguintes dados, *cada um numa linha*:\n\n1. O seu nome completo\n2. O seu melhor e-mail\n3. Nome do responsável (se for menor de 18, senão ignore)`, `Recebido, ${nomeUsuario}! 🙌\n\nAgora, só preciso de mais alguns dados. Por favor, envie, *cada um numa linha*:\n\n1. O seu nome completo\n2. O seu e-mail\n3. Nome do responsável (apenas se for menor)`]);
-            await msg.reply(confirmacaoUsuario);
-            context.awaitingDetails = true;
-        } catch (error) {
-            console.error("[ERRO] Falha ao encaminhar comprovante ou mencionar:", error);
-            await msg.reply("Ops! Tive um problema ao processar o seu comprovante...");
-        }
+    if (!isImage && !isPDF) {
+        await msg.reply('Obrigado por enviar! No entanto, só consigo processar comprovantes em formato de imagem (JPG, PNG) ou PDF. Poderia enviar o ficheiro no formato correto, por favor? 🙏');
         return;
     }
+
+    try {
+        context.pendingReceiptMsg = msg;
+
+        const confirmacaoUsuario = respostaAleatoria([
+            `Obrigado, ${nomeUsuario}! Comprovante recebido. 🙏\n\nAgora, por favor, envie os seguintes dados, *cada um em uma linha*:\n\n1. Seu nome completo\n2. Seu melhor e-mail\n3. Nome do responsável (caso seja menor de 18 anos, senão ignore)`,
+            `Recebido, ${nomeUsuario}! 🙌\n\nPara concluir, envie os seguintes dados, *um por linha*:\n\n1. Seu nome completo\n2. Seu e-mail\n3. Nome do responsável (se for menor)`
+        ]);
+        await msg.reply(confirmacaoUsuario);
+        context.awaitingDetails = true;
+    } catch (error) {
+        console.error("[ERRO] Falha ao processar comprovante inicial:", error);
+        await msg.reply("Ops! Tive um problema ao processar o seu comprovante. Por favor, tente novamente ou envie outro formato.");
+    }
+    return;
+}
+
 
     if (FRASES_DE_SEGUIMENTO.includes(texto.toLowerCase())) {
         if (context.lastTopic) {

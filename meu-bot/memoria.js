@@ -157,7 +157,7 @@ const memoria = [
         id: 'saudacao',
         chaves: ['oi', 'oie', 'oii', 'oiii', 'olá', 'e aí', 'tudo bem', 'opa', 'bom dia', 'boa tarde', 'boa noite', 'oi jcc', 'olá jcc', 'oi retiro', 'olá retiro', 'bom dia retiro', 'boa tarde retiro', 'boa noite retiro', 'oi assistente', 'olá assistente', 'bom dia assistente', 'boa tarde assistente', 'boa noite assistente', 'olá jcc', 'oi jcc', 'bom dia jcc', 'boa tarde jcc', 'boa noite jcc'],
         resposta: (nome) => {
-            const saudacaoInicial = `Olá, ${nome}! A paz de Cristo! 🙏 Eu sou o assistente virtual do retiro Kerigmático JCC.\n\n`;
+            const saudacaoInicial = `Olá, ${nome}! Paz e bem! 🙏 Eu sou o assistente virtual do retiro Kerigmático, do grupo JCC.\n\n`;
             return saudacaoInicial + construirTextoMenu();
         }
     },
@@ -206,7 +206,7 @@ const memoria = [
     {
         id: 'consultar_local',
         chaves: ['local', 'endereço', 'onde', 'lugar', 'escola', 'vai ser onde', 'em que lugar'],
-        resposta: "O retiro será na Escola Municipal João Bosco aqui em Paulo Afonso! \n Vila Poty, Paulo Afonso - BA, 48601-430📍"
+        resposta: "Ainda estamos definindo o local exato, mas será em Paulo Afonso - BA 📍"
     },
     {
         id: 'consultar_valor',
