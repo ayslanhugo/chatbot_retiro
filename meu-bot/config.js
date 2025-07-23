@@ -4,6 +4,7 @@ module.exports = {
     // --- Constantes de Operação ---
     GRUPO_ID_ADMIN: "120363417850316288@g.us",
     SPREADSHEET_ID: "1EMo7FlITs6MUzk8ODsLbjn4mroTnO3_thRkr0TfJylw",
+    TESOUREIRO_ID: '557588181776@c.us',
 
     // --- Constantes de Conteúdo (de memoria.js) ---
     VALOR_INSCRICAO: "50,00",

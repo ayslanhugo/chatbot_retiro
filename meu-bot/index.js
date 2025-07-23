@@ -8,7 +8,9 @@ const { google } = require('googleapis');
 const { memoria, MENU_PRINCIPAL } = require('./memoria');
 const config = require('./config.js');
 
-// --- Constantes de Operação e Lógica ---
+//  Constantes de Operação e Lógica
+const botStartTime = Date.now();
+const MESSAGE_GRACE_PERIOD_SECONDS = 30;
 const floodControl = {};
 const FLOOD_MESSAGE_LIMIT = 5;
 const FLOOD_TIME_WINDOW_SECONDS = 10;
@@ -104,6 +106,12 @@ async function detectIntent(sessionId, query) {
 
 // --- LÓGICA PRINCIPAL DO BOT ---
 async function handleMessage(msg, userContext, client) {
+    // Filtro de mensagens antigas
+    if ((msg.timestamp * 1000) < (botStartTime - (MESSAGE_GRACE_PERIOD_SECONDS * 1000))) {
+        console.log(`[INFO] Mensagem antiga de ${msg.from} ignorada.`);
+        return; 
+    }
+
     if (msg.fromMe) return;
     const chat = await msg.getChat();
     if (chat.isGroup) return;
@@ -115,53 +123,91 @@ async function handleMessage(msg, userContext, client) {
         if (floodControl[from].count === FLOOD_MESSAGE_LIMIT + 1) await msg.reply('Você enviou muitas mensagens rapidamente. Por favor, aguarde um minuto antes de tentar novamente. 🙏');
         return;
     }
+    
+    // Inicialização do contexto do usuário
     if (!userContext[from]) {
-        userContext[from] = { lastOffer: null, offeredKerigma: false, awaitingDetails: false, awaitingRegistrationChoice: false, isDiscussingMinor: false, lastTopic: null, awaitingMenuChoice: false };
+        userContext[from] = { 
+            lastOffer: null, offeredKerigma: false, awaitingDetails: false, 
+            awaitingRegistrationChoice: false, isDiscussingMinor: false, lastTopic: null, 
+            awaitingMenuChoice: false, awaitingConfirmation: false, pendingRegistrationData: null 
+        };
     }
     const context = userContext[from];
     const contato = await msg.getContact();
     const nomeUsuario = contato.pushname ? contato.pushname.split(' ')[0] : contato.number;
 
-    // ==================================================================
     // ORDEM DE VERIFICAÇÃO DE ESTADO (DO MAIS ESPECÍFICO PARA O GERAL)
-    // ==================================================================
 
     // NÍVEL 1: Respostas a perguntas diretas do bot (contextos de alta prioridade)
+
+    if (context.awaitingConfirmation) {
+        const escolha = texto.toLowerCase();
+        if (['1', 'sim', 'confirmar'].includes(escolha)) {
+            const dataParaSalvar = context.pendingRegistrationData;
+            if (await appendToSheet(dataParaSalvar)) {
+                await msg.reply(`Perfeito! Inscrição confirmada e dados guardados. Estamos muito felizes por tê-lo(a) connosco! 🙌`);
+            } else {
+                await msg.reply(`Obrigado pelos dados! Tive um problema ao guardar na nossa planilha. Não se preocupe, a sua pré-inscrição está registada e a equipa fará o processo manualmente. 👍`);
+            }
+            context.awaitingConfirmation = false;
+            context.pendingRegistrationData = null;
+        } else if (['2', 'nao', 'não', 'corrigir', 'corrijir'].includes(escolha)) {
+            await msg.reply('Entendido. Por favor, envie os dados corrigidos, cada um numa linha, como no exemplo a seguir:\n\nSeu Nome Completo\nseu@email.com\nNome do Responsável (ou digite "N/A")');
+            context.awaitingConfirmation = false;
+            context.pendingRegistrationData = null;
+            context.awaitingDetails = true;
+        } else {
+            await msg.reply("Não entendi a sua resposta. Por favor, digite *1 para Confirmar* ou *2 para Corrigir* os dados.");
+        }
+        return;
+    }
+    
+    // Bloco para escolher entre Inscrição Online, Presencial ou Cancelar
     if (context.awaitingRegistrationChoice) {
         const escolhaOnline = ['1', 'online'];
         const escolhaPresencial = ['2', 'presencial'];
-        if (smartMatch(texto, escolhaOnline) || smartMatch(texto, escolhaPresencial)) {
-            context.awaitingRegistrationChoice = false; // Desativa este estado
-            context.awaitingMenuChoice = false; // Também desativa o modo menu para evitar conflitos
-            if (smartMatch(texto, escolhaOnline)) {
-                const item = memoria.find(i => i.id === 'inscricao_online_detalhes');
-                if (item) await msg.reply(item.resposta);
-                else await msg.reply("Processo de inscrição online iniciado! (Resposta a ser configurada em memoria.js com id: inscricao_online_detalhes)");
-            } else {
-                const item = memoria.find(i => i.id === 'inscricao_presencial');
-                if (item) await msg.reply(item.resposta);
-            }
+        const escolhaCancelar = ['3', 'cancelar'];
+
+        if (smartMatch(texto, escolhaOnline)) {
+            context.awaitingRegistrationChoice = false;
+            context.awaitingMenuChoice = false;
+            const item = memoria.find(i => i.id === 'inscricao_online_detalhes');
+            if (item) await msg.reply(item.resposta);
+            else await msg.reply("Processo de inscrição online iniciado! (Resposta a ser configurada em memoria.js com id: inscricao_online_detalhes)");
+        } else if (smartMatch(texto, escolhaPresencial)) {
+            context.awaitingRegistrationChoice = false;
+            context.awaitingMenuChoice = false;
+            const item = memoria.find(i => i.id === 'inscricao_presencial');
+            if (item) await msg.reply(item.resposta);
+        } else if (smartMatch(texto, escolhaCancelar)) {
+            context.awaitingRegistrationChoice = false;
+            await msg.reply("Inscrição cancelada. Se precisar de algo mais, estou por aqui! 👍");
         } else {
-            await msg.reply("Desculpe, não entendi a sua escolha. Por favor, digite '1' para Online ou '2' para Presencial.");
+            await msg.reply("Desculpe, não entendi. Por favor, digite '1' para Online, '2' para Presencial ou '3' para Cancelar.");
         }
         return;
     }
     
     if (context.awaitingDetails) {
         const detalhes = msg.body.split('\n');
-        const dataParaPlanilha = [new Date().toLocaleString('pt-BR', { timeZone: 'America/Bahia' }), detalhes[0] || 'Não informado', detalhes[1] || 'Não informado', contato.number, detalhes[2] || 'N/A'];
+        const nomeCompleto = detalhes[0] || 'Não informado';
+        const email = detalhes[1] || 'Não informado';
+        const responsavel = detalhes[2] || 'N/A';
+        
+        const dataParaPlanilha = [new Date().toLocaleString('pt-BR', { timeZone: 'America/Bahia' }), nomeCompleto, email, contato.number, responsavel];
+        context.pendingRegistrationData = dataParaPlanilha;
+
+        const confirmationMessage = `Por favor, confirme se os seus dados estão corretos:\n\n*Nome:* ${nomeCompleto}\n*E-mail:* ${email}\n*Responsável:* ${responsavel}\n\nPosso confirmar e guardar estes dados?\n\nDigite *1* - Sim, confirmar\nDigite *2* - Não, quero corrigir`;
+        await msg.reply(confirmationMessage);
+
         context.awaitingDetails = false;
-        if (await appendToSheet(dataParaPlanilha)) {
-            await msg.reply(`Perfeito! Inscrição confirmada e dados guardados. A equipa irá verificar o seu comprovante. Estamos muito felizes por tê-lo(a) conosco! 🙌`);
-        } else {
-            await msg.reply(`Obrigado pelos dados! Tive um problema ao guardar na nossa planilha. Não se preocupe, a sua pré-inscrição está registada e a equipa fará o processo manualmente. 👍`);
-        }
+        context.awaitingConfirmation = true;
+        
         return;
     }
 
     // NÍVEL 2: Comandos com gatilhos específicos (envio de mídia, frases de seguimento)
     if (msg.hasMedia && PALAVRAS_CHAVE_COMPROVANTE.some(p => texto.toLowerCase().includes(p))) {
-        // ... (código de encaminhar comprovante continua o mesmo)
         const isImage = msg.type === 'image';
         const isPDF = msg.type === 'document' && msg._data.filename && msg._data.filename.toLowerCase().endsWith('.pdf');
         if (!isImage && !isPDF) {
@@ -170,23 +216,31 @@ async function handleMessage(msg, userContext, client) {
         }
         try {
             await msg.forward(config.GRUPO_ID_ADMIN);
-            await client.sendMessage(config.GRUPO_ID_ADMIN, `📄 Novo comprovante!\n\n*De:* ${contato.pushname || nomeUsuario}\n*Número:* ${contato.number}\n\nVerificar e confirmar.`);
+
+            const tesoureiroId = config.TESOUREIRO_ID;
+            const tesoureiroNumber = tesoureiroId.split('@')[0];
+            const textoMencao = `📄 Novo comprovante!\n\n*De:* ${contato.pushname || nomeUsuario}\n*Número:* ${contato.number}\n\nTesoureiro: @${tesoureiroNumber}, por favor, confirme o recebimento.`;
+
+            await client.sendMessage(config.GRUPO_ID_ADMIN, textoMencao, {
+                mentions: [tesoureiroId]
+            });
+            
             const confirmacaoUsuario = respostaAleatoria([`Obrigado, ${nomeUsuario}! Comprovante recebido. 🙏\n\nPara finalizar, envie os seguintes dados, *cada um numa linha*:\n\n1. O seu nome completo\n2. O seu melhor e-mail\n3. Nome do responsável (se for menor de 18, senão ignore)`, `Recebido, ${nomeUsuario}! 🙌\n\nAgora, só preciso de mais alguns dados. Por favor, envie, *cada um numa linha*:\n\n1. O seu nome completo\n2. O seu e-mail\n3. Nome do responsável (apenas se for menor)`]);
             await msg.reply(confirmacaoUsuario);
             context.awaitingDetails = true;
         } catch (error) {
-            console.error("[ERRO] Falha ao encaminhar comprovante:", error);
+            console.error("[ERRO] Falha ao encaminhar comprovante ou mencionar:", error);
             await msg.reply("Ops! Tive um problema ao processar o seu comprovante...");
         }
         return;
     }
-    
+
     if (FRASES_DE_SEGUIMENTO.includes(texto.toLowerCase())) {
         if (context.lastTopic) {
             const ultimoTopicoInfo = memoria.find(item => item.id === context.lastTopic);
             if (ultimoTopicoInfo && ultimoTopicoInfo.resposta_seguimento) {
                 await msg.reply(ultimoTopicoInfo.resposta_seguimento);
-                context.lastTopic = null; // Responde e limpa o tópico
+                context.lastTopic = null;
                 return;
             }
         }
@@ -251,7 +305,7 @@ async function responderComItem(itemParaResponder, msg, context, nomeUsuario, ch
     if (itemParaResponder.id === 'fazer_inscricao') {
         const pergunta = memoria.find(i => i.id === 'fazer_inscricao').resposta(nomeUsuario);
         await msg.reply(pergunta);
-        context.awaitingRegistrationChoice = true; // Ativa o estado de espera pela escolha da inscrição
+        context.awaitingRegistrationChoice = true;
         return;
     }
 

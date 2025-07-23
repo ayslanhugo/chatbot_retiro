@@ -1,14 +1,14 @@
-// memoria.js (VERSÃO COM MENU MELHORADO)
+// memoria.js 
 
 const moment = require('moment');
 const config = require('./config.js');
 
-// ==================================================================
+
 // ESTRUTURA DO MENU PRINCIPAL
-// ==================================================================
+
 const MENU_PRINCIPAL = [
-    { numero: 1, secao: 'INFORMAÇÕES ESSENCIAIS', emoji: '🗓️', titulo: 'Data, Horário e Local', id_intent: 'consultar_data' },
-    { numero: 2, secao: 'INFORMAÇÕES ESSENCIAIS', emoji: '💰', titulo: 'Valor e como pagar', id_intent: 'consultar_valor' },
+    { numero: 1, secao: 'INFORMAÇÕES ESSENCIAIS', emoji: '🗓️', titulo: 'Data e Horário', id_intent: 'consultar_data' },
+    { numero: 2, secao: 'INFORMAÇÕES ESSENCIAIS', emoji: '💰', titulo: 'Valor e forma de pagamento', id_intent: 'consultar_valor' },
     { numero: 3, secao: 'INFORMAÇÕES ESSENCIAIS', emoji: '📝', titulo: 'Como fazer a inscrição', id_intent: 'fazer_inscricao' },
     
     { numero: 4, secao: 'VIDA NO RETIRO', emoji: '🎒', titulo: 'O que levar para o retiro', id_intent: 'levar' },
@@ -42,11 +42,10 @@ const construirTextoMenu = () => {
 };
 
 
-// --- "Memória" do Bot ---
 const memoria = [
-    // ==================================================================
+
     // TÓPICOS DE ALTA PRIORIDADE
-    // ==================================================================
+
     {
         id: 'inclusividade_lgbt',
         chaves: ['homossexual', 'homosexual', 'gay', 'lgbt', 'lgbtqia', 'lésbica', 'lesbica', 'trans', 'não-binário', 'nao-binario'],
@@ -77,33 +76,11 @@ const memoria = [
         chaves: ['colchonete', 'colchão', 'levar colchonete', 'precisa de colchonete', 'tem colchão'],
         resposta: "Sim, é preciso levar! Para garantir o seu conforto durante a noite, pedimos que cada participante providencie o seu próprio colchonete ou um item similar para dormir. Não se esqueça também da roupa de cama! 😉"
     },
-
-    // ==================================================================
-    // RESTO DOS COMANDOS
-    // ==================================================================
     {
         id: 'fazer_inscricao',
         chaves: ['ficha', 'pdf', 'formulario', 'inscrever', 'inscrição', 'participar', 'como faz', 'entrar', 'quero ir'],
-        resposta: (nome) => `Que alegria saber do seu interesse, ${nome}! 😊
+            resposta: (nome) => `Que alegria saber do seu interesse, ${nome}! 😊\n\n⚠️ *ATENÇÃO: Se o participante for menor de 18 anos, a inscrição deve ser feita obrigatoriamente de forma PRESENCIAL, acompanhado(a) de um responsável.*\n\nEntendido isso, como você prefere continuar?\n\n1️⃣ *Online (Apenas para maiores de 18 anos)*\nEu envio-lhe a ficha, você preenche, paga por PIX e envia-me o comprovante.\n\n2️⃣ *Presencialmente*\nVocê pode ir ao nosso grupo de oração e fazer a sua inscrição diretamente com a nossa equipe.\n\n3️⃣ *Cancelar*\nVoltar ao menu anterior.\n\nDigite *1* para Online, *2* para Presencial ou *3* para Cancelar.`
 
-        ⚠️ *ATENÇÃO: Se o participante for menor de 18 anos, a inscrição deve ser feita obrigatoriamente de forma PRESENCIAL, acompanhado(a) de um responsável.*
-
-        Entendido isso, como você prefere continuar?
-
-        1️⃣ *Online (Apenas para maiores de 18 anos)*  
-        Eu envio-lhe a ficha, você preenche, paga por PIX e envia-me o comprovante.
-
-        2️⃣ *Presencialmente*  
-        Você pode ir ao nosso grupo de oração (toda segunda-feira, às 19h30, no salão da paróquia) e fazer a sua inscrição e pagamento diretamente com a nossa equipe.
-
-        Digite *1* para Online ou *2* para Presencial.
-
-        ⚠️ *Regras da inscrição:*
-        - A inscrição só será confirmada mediante pagamento da taxa (*R$50*).
-        - Inscrição deve ser confirmada até *18/08*.
-        - *As vagas são limitadas.*
-        - Para *menores de 18 anos* é necessária a autorização dos pais.
-        - Em caso de *desistência*, será devolvido apenas *50% da taxa.*`
         },
 
     {
@@ -153,7 +130,7 @@ const memoria = [
     {
         id: 'idade',
         chaves: ['idade', 'quantos anos', 'limite de idade', 'classificação', 'a partir de que idade', 'faixa etária', 'idade mínima'],
-        resposta: "A idade mínima para participar é de 15 anos. A partir daí, todos os jovens de coração aberto são super bem-vindos! 💙"
+        resposta: "A idade mínima para participar é de 14 anos. A partir daí, todos os jovens de coração aberto são super bem-vindos! 💙"
     },
     {
         id: 'dormir_local',
@@ -207,8 +184,24 @@ const memoria = [
     {
         id: 'levar',
         chaves: ['levar', 'mala', 'trazer', 'roupa', 'preciso', 'o que levar', 'na mala'],
-        resposta: "Ótimo que você quer se preparar! Leve: Bíblia, caderno, caneta, colchonete, roupas de cama e banho, roupas modestas (inclusive para o banho), sua garrafinha, prato, copo, talheres, terço e itens de higiene pessoal. 😊",
-        resposta_seguimento: "Claro! Além do básico, um detalhe importante é trazer um terço para os momentos de oração. Se você gosta de anotar, um caderno extra ou diário espiritual também é uma ótima ideia! Outro ponto é não se esquecer de remédios de uso pessoal, se precisar."
+        resposta: "✨ Que bom saber que você quer se preparar bem! Aqui vai uma lista com tudo o que você deve levar para o retiro:\n\n" +
+              "🧳 *Itens essenciais:*\n" +
+              "❤️ Um coração aberto, para viver esse final de semana com intensidade!\n" +
+              "📖 Bíblia\n" +
+              "📝 Caderno e caneta\n" +
+              "🛏️ Colchonete ou isolante térmico\n" +
+              "🛌 Roupas de cama (lençol, travesseiro e cobertor)\n" +
+              "🚿 Toalha de banho\n" +
+              "👕 Roupas modestas para todas as ocasiões (inclusive para dormir)\n" +
+              "👟 Tênis ou sandália confortável\n" +
+              "💧 Garrafinha de água\n" +
+              "🍽️ Prato, copo e talheres\n" +
+              "📿 Terço\n" +
+              "🧼 Itens de higiene pessoal (sabonete, shampoo, escova e pasta de dente, desodorante, etc.)\n",
+    resposta_seguimento: "💊 *Não se esqueça de:*\n" +
+                         "- Remédios de uso pessoal, se necessário\n" +
+                         "- 🗒️ Um diário espiritual ou caderno extra, se gostar de anotar reflexões\n\n" +
+                         "🙏 Tudo isso vai te ajudar a viver o retiro com mais profundidade e conforto! Se tiver dúvidas, pode perguntar! 😊"
     },
     {
         id: 'consultar_local',
@@ -218,7 +211,7 @@ const memoria = [
     {
         id: 'consultar_valor',
         chaves: ['valor', 'pagamento', 'preço', 'custa', 'pagar', 'taxa', 'pago alguma coisa', 'é de graça', 'quanto custa', 'qual o valor'],
-        funcaoResposta: () => `A inscrição custa R$ ${config.VALOR_INSCRICAO}.\n\n💸 O pagamento pode ser feito por PIX:\nChave: *${config.CHAVE_PIX}* (em nome de ${config.NOME_CONTATO_PIX}).\n\nDepois é só mandar o comprovante aqui mesmo no chat que eu cuido do resto por você! 😉`
+        funcaoResposta: () => `A inscrição custa R$ ${config.VALOR_INSCRICAO}.\n\n💸 O pagamento pode ser feito por PIX:\nChave: *${config.CHAVE_PIX}* (em nome de ${config.NOME_CONTATO_PIX}).😉`
     },
     {
         id: 'ajuda',
