@@ -144,6 +144,12 @@ async function handleMessage(msg, userContext, client) {
     const chat = await msg.getChat();
     if (chat.isGroup) return;
     if (msg.type === 'sticker') return;
+
+    if (msg.type === 'ptt') {
+        await msg.reply('Desculpe, ainda não consigo ouvir mensagens de áudio. 🙏 Por favor, envie sua dúvida por texto.');
+        return;
+    }
+
     if (!msg.body && !msg.hasMedia) return;
     const from = msg.from;
     const texto = msg.body ? msg.body.trim() : "";

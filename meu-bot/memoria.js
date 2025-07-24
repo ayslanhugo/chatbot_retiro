@@ -206,7 +206,7 @@ const memoria = [
     {
         id: 'consultar_local',
         chaves: ['local', 'endereço', 'onde', 'lugar', 'escola', 'vai ser onde', 'em que lugar'],
-        resposta: "Ainda estamos definindo o local exato, mas será em Paulo Afonso - BA 📍"
+        resposta: "O retiro será na escola João Bosco, em Paulo Afonso - BA.\nEndereço: Vila Poty, Paulo Afonso - BA, 48601-430 📍"
     },
     {
         id: 'consultar_valor',
