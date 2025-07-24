@@ -8,20 +8,20 @@ const config = require('./config.js');
 
 const MENU_PRINCIPAL = [
     { numero: 1, secao: 'INFORMAÇÕES ESSENCIAIS', emoji: '🗓️', titulo: 'Data e Horário', id_intent: 'consultar_data' },
-    { numero: 2, secao: 'INFORMAÇÕES ESSENCIAIS', emoji: '💰', titulo: 'Valor e forma de pagamento', id_intent: 'consultar_valor' },
-    { numero: 3, secao: 'INFORMAÇÕES ESSENCIAIS', emoji: '📝', titulo: 'Como fazer a inscrição', id_intent: 'fazer_inscricao' },
+    { numero: 2, secao: 'INFORMAÇÕES ESSENCIAIS', emoji: '📍', titulo: 'Local do Retiro', id_intent: 'consultar_local' },
+    { numero: 3, secao: 'INFORMAÇÕES ESSENCIAIS', emoji: '💰', titulo: 'Valor e forma de pagamento', id_intent: 'consultar_valor' },
+    { numero: 4, secao: 'INFORMAÇÕES ESSENCIAIS', emoji: '📝', titulo: 'Como fazer a inscrição', id_intent: 'fazer_inscricao' },
     
-    { numero: 4, secao: 'VIDA NO RETIRO', emoji: '🎒', titulo: 'O que levar para o retiro', id_intent: 'levar' },
-    { numero: 5, secao: 'VIDA NO RETIRO', emoji: '🍔', titulo: 'Alimentação no retiro', id_intent: 'comida_bebida' },
-    { numero: 6, secao: 'VIDA NO RETIRO', emoji: '🎉', titulo: 'Atividades e programação', id_intent: 'saber_atividades' },
-    { numero: 7, secao: 'VIDA NO RETIRO', emoji: '📜', titulo: 'O que é roupa modesta?', id_intent: 'roupa_modesta' },
+    { numero: 5, secao: 'VIDA NO RETIRO', emoji: '🎒', titulo: 'O que levar para o retiro', id_intent: 'levar' },
+    { numero: 6, secao: 'VIDA NO RETIRO', emoji: '🍔', titulo: 'Alimentação no retiro', id_intent: 'comida_bebida' },
+    { numero: 7, secao: 'VIDA NO RETIRO', emoji: '🎉', titulo: 'Atividades e programação', id_intent: 'saber_atividades' },
+    { numero: 8, secao: 'VIDA NO RETIRO', emoji: '📜', titulo: 'O que é roupa modesta?', id_intent: 'roupa_modesta' },
 
-    { numero: 8, secao: 'SOBRE E CONTATO', emoji: '❓', titulo: 'O que é o Retiro?', id_intent: 'sobre_retiro' },
-    { numero: 9, secao: 'SOBRE E CONTATO', emoji: '⏳', titulo: 'Quanto tempo falta?', id_intent: 'contagem' },
-    { numero: 10, secao: 'SOBRE E CONTATO', emoji: '💬', titulo: 'Falar com um organizador', id_intent: 'falar_humano' },
-    { numero: 11, secao: 'SOBRE E CONTATO', emoji: '🔗', titulo: 'Entrar no grupo do WhatsApp', id_intent: 'grupo_whatsapp' },
+    { numero: 9, secao: 'SOBRE E CONTATO', emoji: '❓', titulo: 'O que é o Retiro?', id_intent: 'sobre_retiro' },
+    { numero: 10, secao: 'SOBRE E CONTATO', emoji: '⏳', titulo: 'Quanto tempo falta?', id_intent: 'contagem' },
+    { numero: 11, secao: 'SOBRE E CONTATO', emoji: '💬', titulo: 'Falar com um organizador', id_intent: 'falar_humano' },
+    { numero: 12, secao: 'SOBRE E CONTATO', emoji: '🔗', titulo: 'Entrar no grupo do WhatsApp', id_intent: 'grupo_whatsapp' },
 ];
-
 
 // Função que constrói a string do menu com seções e formatação
 const construirTextoMenu = () => {
