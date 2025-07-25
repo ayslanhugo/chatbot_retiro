@@ -76,6 +76,33 @@ const memoria = [
         chaves: ['colchonete', 'colchão', 'levar colchonete', 'precisa de colchonete', 'tem colchão'],
         resposta: "Sim, é preciso levar! Para garantir o seu conforto durante a noite, pedimos que cada participante providencie o seu próprio colchonete ou um item similar para dormir. Não se esqueça também da roupa de cama! 😉"
     },
+
+    {
+        id: 'prazo_inscricao',
+        chaves: ['prazo', 'data limite', 'até quando', 'último dia', 'ultimo dia', 'encerra', 'acaba', 'termina a inscrição', 'até que dia'],
+        funcaoResposta: () => {
+            const hoje = moment().startOf('day');
+            // Usamos a nova variável do config.js
+            const dataLimite = moment(config.DATA_LIMITE_INSCRICAO, 'YYYY-MM-DD');
+            const dataFormatada = dataLimite.format('DD/MM/YYYY');
+            
+            if (hoje.isAfter(dataLimite)) {
+                // Se a data de hoje já passou da data limite
+                return `O prazo para as inscrições online encerrou no dia ${dataFormatada}. 😕\n\nMas não desanime! Recomendamos que você entre em contato com um organizador para verificar se ainda há vagas remanescentes. Para isso, digite "falar com um organizador".`;
+            } else {
+                // Se ainda estamos dentro do prazo
+                const diasRestantes = dataLimite.diff(hoje, 'days');
+                if (diasRestantes === 0) {
+                    return `É HOJE! 😱 As inscrições encerram-se hoje, dia ${dataFormatada}. Corra para não perder a sua vaga!`;
+                }
+                if (diasRestantes === 1) {
+                    return `Atenção! O prazo para se inscrever termina AMANHÃ, dia ${dataFormatada}. Garanta já a sua vaga! 🔥`;
+                }
+                return `As inscrições vão até o dia ${dataFormatada} (${diasRestantes} dias restantes).\n\nNão deixe para a última hora, pois as vagas são limitadas! 😉`;
+            }
+        }
+    },
+
     {
         id: 'fazer_inscricao',
         chaves: ['ficha', 'pdf', 'formulario', 'inscrever', 'inscrição', 'participar', 'como faz', 'entrar', 'quero ir'],
@@ -132,12 +159,16 @@ const memoria = [
         chaves: ['idade', 'quantos anos', 'limite de idade', 'classificação', 'a partir de que idade', 'faixa etária', 'idade mínima'],
         resposta: "A idade mínima para participar é de 14 anos. A partir daí, todos os jovens de coração aberto são super bem-vindos! 💙"
     },
-    {
-        id: 'dormir_local',
-        chaves: ['dormir', 'pernoitar', 'preciso dormir', 'tenho que dormir', 'é obrigatório dormir', 'posso ir embora'],
-        resposta: "O retiro é uma experiência de imersão completa, e o pernoite no local faz parte dessa vivência. Isso fortalece a comunhão e nos ajuda a viver intensamente cada momento. Por isso, pedimos que leve colchonete e roupas de cama. 😊",
-        resposta_seguimento: "Com certeza! Além do colchonete, lembre-se de trazer um lençol, um travesseiro e um cobertor para garantir que você tenha uma noite de sono confortável e revigorante. 🙏"
-    },
+    // Substitua o bloco 'dormir_local' antigo por este:
+
+{
+    id: 'dormir_local',
+    chaves: ['dormir', 'pernoitar', 'preciso dormir', 'tenho que dormir', 'é obrigatório dormir', 'posso ir embora', 'não posso dormir', 'nao posso dormir', 'sem dormir', 'ir pra casa a noite'],
+    resposta: "O retiro é uma experiência de imersão completa, e o pernoite no local faz parte dessa vivência. A proposta é que todos permaneçam juntos, pois isso fortalece a comunhão e nos ajuda a viver intensamente cada momento. 🙏\n\n" +
+              "Entendemos, porém, que podem existir casos muito específicos que dificultem o pernoite. Se essa é a sua situação, pedimos que você converse diretamente com a nossa equipe de organização para que possamos entender o seu caso e encontrar a melhor solução juntos. ❤️\n\n" +
+              "Para isso, digite *\"falar com um organizador\"* que eu te passo o contato.",
+    resposta_seguimento: "Com certeza! Para quem for pernoitar, além do colchonete, lembre-se de trazer um lençol, um travesseiro e um cobertor para garantir que você tenha uma noite de sono confortável e revigorante. 😊"
+},
     {
         id: 'uso_celular',
         chaves: ['celular', 'telemóvel', 'telefone', 'usar o celular', 'internet', 'wifi'],

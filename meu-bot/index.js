@@ -1,10 +1,11 @@
 // index.js
 
-const { Client, LocalAuth } = require('whatsapp-web.js');
+const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const dialogflow = require('@google-cloud/dialogflow');
 const stringSimilarity = require('string-similarity');
 const { google } = require('googleapis');
+const moment = require('moment');
 const { memoria, MENU_PRINCIPAL } = require('./memoria');
 const config = require('./config.js');
 
@@ -182,6 +183,31 @@ async function handleMessage(msg, userContext, client) {
             console.log(`[SEGURANÇA] Comando de admin "${texto}" bloqueado para o usuário ${from}.`);
         }
         return; 
+    }
+
+    if (msg.hasMedia && !PALAVRAS_CHAVE_COMPROVANTE.some(p => texto.toLowerCase().includes(p))) {
+        const mimetype = msg._data.mimetype || '';
+        const filename = msg._data.filename || '';
+        const isImage = msg.type === 'image' || mimetype.startsWith('image/');
+        const isPDF = mimetype === 'application/pdf' || filename.toLowerCase().endsWith('.pdf');
+
+        if (isImage || isPDF) {
+            console.log(`[INFO] Mídia recebida de ${from} sem palavra-chave. Enviando instruções.`);
+            
+            const textoDeInstrucao = `Olá! Recebi um arquivo aqui. 😊\n\nSe este é o seu comprovante de pagamento, peço que o envie novamente, mas desta vez, escrevendo a palavra *comprovante* na legenda, como no exemplo acima. 👆🏻\n\nIsso me ajuda a entender que você está iniciando o processo de inscrição e a guardar os seus dados corretamente! 😉`;
+
+            try {
+                // ATENÇÃO: Código já ajustado para o seu arquivo .jpeg!
+                const mediaExemplo = MessageMedia.fromFilePath('./exemplo-comprovante.jpeg');
+                await client.sendMessage(msg.from, mediaExemplo, { caption: textoDeInstrucao });
+            } catch (e) {
+                console.error(`[ERRO] Falha ao enviar imagem de exemplo: ${e.message}. Enviando apenas texto.`);
+                // Se a imagem de exemplo falhar, envia pelo menos o texto.
+                await msg.reply(textoDeInstrucao);
+            }
+            
+            return; // Impede que o resto do código seja executado
+        }
     }
 
     if (!userContext[from]) {
@@ -427,13 +453,98 @@ function start() {
         }
     });
     const userContext = {};
+
     client.on('qr', (qr) => {
         qrcode.generate(qr, { small: true });
     });
+
     client.on('ready', () => {
         console.log('✅ Bot está pronto e conectado ao WhatsApp!');
+        console.log('[AGENDADOR] Iniciando agendador de mensagens de divulgação.');
+
+        const mensagensGerais = [
+            // --- MENSAGENS DE CONVITE GERAL (Para agora) ---
+            "Paz e bem! 🙏 Já imaginou um final de semana para renovar a fé, fazer amigos e viver algo que só Deus pode proporcionar? Esse é o nosso Retiro Kerigmático! As inscrições estão abertas. Fale comigo no privado para saber como participar!",
+            "Ei, você! Sentindo o chamado para algo novo? ✨ O Retiro Kerigmático do JCC foi pensado para você. Um tempo de pausa, oração e encontro. Venha viver essa alegria com a gente!",
+            "🎶 Muita música, louvor, adoração, partilhas e amizades para a vida toda! O Retiro Kerigmático do JCC está chegando e as vagas já estão sendo preenchidas. Garanta a sua e venha fazer parte desta família!",
+            `O retiro acontece nos dias 22, 23 e 24 de agosto! Já marcou na sua agenda? A inscrição custa apenas R$${config.VALOR_INSCRICAO} e você pode pagar por PIX. Mais informações? É só me perguntar!`,
+        ];
+
+        const mensagensDeUrgencia = [
+            // --- MENSAGENS DE URGÊNCIA (Para perto do prazo final - 18/08) ---
+            "⚠️ ATENÇÃO! O tempo está voando e as vagas para o nosso retiro estão diminuindo! Não deixe para a última hora. O prazo para se inscrever é até 18 de agosto. Garanta já o seu lugar!",
+            "Contagem regressiva para o fim das inscrições! 🔥 Você não vai querer correr o risco de ficar de fora, não é? O seu 'sim' pode transformar o seu final de semana. #VagasLimitadas #RetiroJCC",
+            "ÚLTIMOS DIAS PARA INSCRIÇÃO! Se você está pensando em ir, a hora de decidir é AGORA. Fale comigo, tire as suas dúvidas e faça a sua inscrição antes que seja tarde demais!",
+        ];
+
+        const mensagensDeAquecimento = [
+            // --- MENSAGENS DE 'AQUECIMENTO' (Para a semana do retiro, após 18/08) ---
+            "É ESSA SEMANA! 😱 É isso mesmo! Daqui a poucos dias estaremos juntos para viver o nosso tão esperado retiro. Já começou a arrumar a mala e o coração?",
+            "Apenas alguns dias nos separam de uma experiência que vai marcar a sua vida. A equipe está em oração por cada um de vocês. Que venha o Retiro Kerigmático do JCC! 🙌",
+            "DICA PARA O RETIRO: Não se esqueça de trazer sua Bíblia, um caderno para anotações e, o mais importante, um coração aberto para tudo o que Deus preparou. Estamos quase lá!"
+        ];
+        
+        // 2. Variável para controlar o envio da arte (para não enviar toda hora)
+        let contadorDeDisparos = 0;
+        const intervalo = 1000 * 60 * 60 * 8;
+
+        setInterval(() => {
+        const hoje = moment();
+        const dataLimiteInscricao = moment(config.DATA_LIMITE_INSCRICAO, 'YYYY-MM-DD');
+        const dataRetiro = moment(config.DATA_RETIRO, 'YYYY-MM-DD');
+        
+        let listaDeMensagensParaUsar = [];
+
+        // 2. LÓGICA PARA ESCOLHER A LISTA CERTA
+        if (hoje.isAfter(dataRetiro)) {
+            console.log('[AGENDADOR] O retiro já passou. Encerrando disparos.');
+            return; // Para de enviar mensagens se o retiro já acabou
+        }
+        
+        if (hoje.isAfter(dataLimiteInscricao)) {
+            console.log('[AGENDADOR] Fase de Aquecimento!');
+            listaDeMensagensParaUsar = mensagensDeAquecimento;
+        } else if (dataLimiteInscricao.diff(hoje, 'days') <= 7) {
+            console.log('[AGENDADOR] Fase de Urgência!');
+            listaDeMensagensParaUsar = mensagensDeUrgencia;
+        } else {
+            console.log('[AGENDADOR] Fase Geral de Divulgação.');
+            listaDeMensagensParaUsar = mensagensGerais;
+        }
+
+        if (listaDeMensagensParaUsar.length === 0) {
+            console.log('[AGENDADOR] Nenhuma mensagem aplicável para a data de hoje.');
+            return;
+        }
+
+        const mensagemAleatoria = listaDeMensagensParaUsar[Math.floor(Math.random() * listaDeMensagensParaUsar.length)];
+        contadorDeDisparos++;
+
+        if (!config.GRUPOS_DIVULGACAO_IDS || config.GRUPOS_DIVULGACAO_IDS.length === 0) {
+            return;
+        }
+
+            for (const grupoId of config.GRUPOS_DIVULGACAO_IDS) {
+        if (contadorDeDisparos % 4 === 0) {
+            console.log(`[AGENDADOR] Enviando ARTE para o grupo ${grupoId}`);
+            try {
+                const media = MessageMedia.fromFilePath('./arte-retiro.png');
+                client.sendMessage(grupoId, media, { caption: mensagemAleatoria });
+            } catch (e) {
+                console.error(`[AGENDADOR] Falha ao enviar arte: ${e.message}. Enviando apenas texto.`);
+                client.sendMessage(grupoId, mensagemAleatoria);
+            }
+        } else {
+            console.log(`[AGENDADOR] Enviando TEXTO para o grupo ${grupoId}`);
+            client.sendMessage(grupoId, mensagemAleatoria);
+        }
+    }
+    }, intervalo);
+        
+        // O registro do 'message' handler também fica aqui dentro
         client.on('message', (msg) => handleMessage(msg, userContext, client));
-    });
+    }); 
+
     console.log("Iniciando o cliente...");
     client.initialize().catch(err => { console.error("Erro CRÍTICO ao inicializar o cliente:", err); });
 }
