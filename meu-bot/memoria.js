@@ -205,7 +205,7 @@ const memoria = [
     {
         id: 'consultar_data',
         chaves: ['data', 'quando', 'datas', 'calendário', 'que dia'],
-        resposta: "O retiro vai acontecer nos dias 22, 23 e 24 de agosto de 2025. Já anota aí no seu coração (e na agenda também)! 😄\n\nEle começa na sexta-feira (22/08) às 19h e termina no domingo (24/08) às 18h, com a Santa Missa. ✨"
+        resposta: "O retiro vai acontecer nos dias 22, 23 e 24 de agosto de 2025. Já anota aí no seu coração (e na agenda também)! 😄\n\nEle começa na sexta-feira (22/08) às 19h e termina no domingo (24/08) às 18h. ✨"
     },
     {
         id: 'horario',
