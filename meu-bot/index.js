@@ -1,4 +1,4 @@
-// index.js (Versão Final Corrigida)
+// index.js (Versão Final e Corrigida)
 
 const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
@@ -6,28 +6,17 @@ const { memoria, MENU_PRINCIPAL } = require('./memoria.js');
 const config = require('./config.js');
 
 // Importando os nossos novos módulos
-const { iniciarAgendadores } = require('./modulos/agendador.js');
+const { iniciarAgendadores, lerLeads, salvarLeads } = require('./modulos/agendador.js');
 const { getSheetData, appendToSheet, detectIntent } = require('./modulos/googleServices.js');
-const { respostaAleatoria, smartMatch } = require('./modulos/utils.js');
+const { botStartTime, respostaAleatoria, smartMatch } = require('./modulos/utils.js');
+const { handleAdminCommand } = require('./modulos/adminCommands.js');
 
 // Constantes e funções que fazem sentido continuar aqui
-const botStartTime = Date.now();
 const floodControl = {};
 const MESSAGE_GRACE_PERIOD_SECONDS = 30;
 const PALAVRAS_CHAVE_COMPROVANTE = ['comprovante', 'pagamento', 'pix', 'paguei', 'inscrição', 'recibo', 'transferência', 'transferencia', 'tá pago', 'ta pago', 'comprovando'];
+const INTENTS_DE_ALTO_INTERESSE = ['fazer_inscricao', 'consultar_valor', 'consultar_local', 'consultar_data', 'prazo_inscricao', 'menor_idade'];
 
-
-function getUptime() {
-    const uptimeSeconds = Math.floor((Date.now() - botStartTime) / 1000);
-    const days = Math.floor(uptimeSeconds / 86400);
-    const hours = Math.floor((uptimeSeconds % 86400) / 3600);
-    const minutes = Math.floor((uptimeSeconds % 3600) / 60);
-    let uptimeString = '';
-    if (days > 0) uptimeString += `${days}d `;
-    if (hours > 0) uptimeString += `${hours}h `;
-    if (minutes > 0) uptimeString += `${minutes}m`;
-    return uptimeString.trim() || 'menos de um minuto';
-}
 
 function isUserFlooding(from) {
     const FLOOD_MESSAGE_LIMIT = 5;
@@ -71,13 +60,9 @@ async function handleMessage(msg, userContext, client) {
     if (texto.startsWith('/')) {
         if (config.ADMIN_IDS && config.ADMIN_IDS.includes(from)) {
             const command = texto.split(' ')[0];
-            if (command === '/status') {
-                await msg.reply(`🤖 Olá, admin! Estou online e funcionando.\n*Tempo de atividade:* ${getUptime()}.`);
-            } else if (command === '/stats') {
-                const data = await getSheetData();
-                const totalInscritos = data ? (data.length > 1 ? data.length - 1 : 0) : 'N/A'; 
-                await msg.reply(`*Total de inscritos na planilha:* ${totalInscritos}`);
-            }
+            await handleAdminCommand(command, msg, client);
+        } else {
+            console.log(`[SEGURANÇA] Comando de admin "${texto}" bloqueado para o usuário ${from}.`);
         }
         return; 
     }
@@ -103,7 +88,6 @@ async function handleMessage(msg, userContext, client) {
     const contato = await msg.getContact();
     const nomeUsuario = contato.pushname ? contato.pushname.split(' ')[0] : contato.number;
 
-   // A nova versão melhorada
     if (context.awaitingConfirmation) {
         const escolha = texto.toLowerCase();
         if (['1', 'sim', 'confirmar'].includes(escolha)) {
@@ -119,21 +103,21 @@ async function handleMessage(msg, userContext, client) {
             } catch (adminError) { console.error("[ERRO ADMIN] Falha ao enviar para o grupo de admin:", adminError); }
             if (await appendToSheet(dataParaSalvar)) {
                 await msg.reply(`Perfeito! Inscrição confirmada e dados guardados. 🙌`);
+                const leads = lerLeads();
+                if (leads[from]) {
+                    console.log(`[LEADS] Removendo usuário ${nomeUsuario} (${from}) da lista de leads pois a inscrição foi concluída.`);
+                    delete leads[from];
+                    salvarLeads(leads);
+                }
             } else {
                 await msg.reply(`Obrigado pelos dados! Tive um problema ao guardar na nossa planilha, mas a equipe já foi notificada.`);
             }
-            // Limpa todo o contexto após o sucesso
             userContext[from] = {};
-
         } else if (['2', 'nao', 'não', 'corrigir'].includes(escolha)) {
-            // AQUI ESTÁ A MUDANÇA PRINCIPAL
-            await msg.reply('Sem problemas! O seu comprovante está guardado. Por favor, envie os seus dados novamente, com atenção, cada um numa nova linha:\n\n1. Seu nome completo\n2. Seu e-mail\n3. Nome do responsável (se for menor)');
-            
-            // Apenas volta para o passo de pedir os detalhes, sem apagar o comprovante
+            await msg.reply('Sem problemas! O seu comprovativo está guardado. Por favor, envie os seus dados novamente, com atenção, cada um numa nova linha:\n\n1. Seu nome completo\n2. Seu e-mail\n3. Nome do responsável (se for menor)');
             context.awaitingDetails = true;
             context.awaitingConfirmation = false;
             context.pendingRegistrationData = null;
-            
         } else {
             await msg.reply("Não entendi. Por favor, digite *1 para Confirmar* ou *2 para Corrigir*.");
         }
@@ -141,18 +125,15 @@ async function handleMessage(msg, userContext, client) {
     }
 
     if (context.awaitingRegistrationChoice) {
-        const escolhaOnline = ['1', 'online'];
-        const escolhaPresencial = ['2', 'presencial'];
-        const escolhaCancelar = ['3', 'cancelar'];
-        if (smartMatch(texto, escolhaOnline)) {
+        if (texto === '1') {
             context.awaitingRegistrationChoice = false;
             const item = memoria.find(i => i.id === 'inscricao_online_detalhes');
             if (item) await msg.reply(item.resposta);
-        } else if (smartMatch(texto, escolhaPresencial)) {
+        } else if (texto === '2') {
             context.awaitingRegistrationChoice = false;
             const item = memoria.find(i => i.id === 'inscricao_presencial');
             if (item) await msg.reply(item.resposta);
-        } else if (smartMatch(texto, escolhaCancelar)) {
+        } else if (texto === '3') {
             context.awaitingRegistrationChoice = false;
             await msg.reply("Inscrição cancelada. Se precisar de algo mais, estou por aqui! 👍");
         } else {
@@ -161,26 +142,21 @@ async function handleMessage(msg, userContext, client) {
         return;
     }
 
-// Cole este bloco de código DEPOIS do bloco "if (context.awaitingRegistrationChoice) { ... }"
-
-    // NÍVEL 3: Lógica do Menu Principal (quando o bot espera um número)
     const numeroEscolhido = parseInt(texto, 10);
     if (context.awaitingMenuChoice && !isNaN(numeroEscolhido)) {
         const itemDoMenu = MENU_PRINCIPAL.find(item => item.numero === numeroEscolhido);
-        
         if (itemDoMenu) {
             const intentName = itemDoMenu.id_intent;
             const itemParaResponder = memoria.find(m => m.id === intentName);
             if (itemParaResponder) {
                 await responderComItem(itemParaResponder, msg, context, nomeUsuario, chat);
             } else {
-                 await msg.reply('Ops! Encontrei a opção no menu, mas estou com dificuldade de achar a resposta. Tente perguntar com outras palavras, por favor.');
+                 await msg.reply('Ops! Encontrei a opção no menu, mas estou com dificuldade de achar a resposta.');
             }
         } else {
-            // Se o número não está no menu
             await msg.reply("Desculpe, não encontrei essa opção no menu. Por favor, digite um dos números listados.");
         }
-        return; // Termina o processamento aqui
+        return;
     }
     context.awaitingMenuChoice = false; 
 
@@ -235,40 +211,36 @@ async function handleMessage(msg, userContext, client) {
     }
 }
 
-// Substitua a sua função 'responderComItem' por esta:
-
-// Substitua a sua função 'responderComItem' por esta versão final:
-
 async function responderComItem(itemParaResponder, msg, context, nomeUsuario, chat) {
-    // Caso especial para iniciar a inscrição
+    if (INTENTS_DE_ALTO_INTERESSE.includes(itemParaResponder.id)) {
+        console.log(`[LEADS] Detectado alto interesse do usuário ${nomeUsuario} (${msg.from})`);
+        const leads = lerLeads();
+        leads[msg.from] = {
+            nome: nomeUsuario,
+            lastInteraction: new Date().toISOString(),
+            followUpSent: false
+        };
+        salvarLeads(leads);
+    }
     if (itemParaResponder.id === 'fazer_inscricao') {
         const pergunta = memoria.find(i => i.id === 'fazer_inscricao').resposta(nomeUsuario);
         await msg.reply(pergunta);
         context.awaitingRegistrationChoice = true;
         return;
     }
-
-    // Caso especial para a saudação (que mostra o menu principal)
-    if (itemParaResponder.id === 'saudacao') {
+    if (['saudacao', 'ajuda', 'confirmacao_positiva'].includes(itemParaResponder.id)) { 
         const saudacao = memoria.find(i => i.id === 'saudacao').resposta(nomeUsuario);
         await msg.reply(saudacao);
-        context.awaitingMenuChoice = true; // ATIVA O MODO DE ESPERA POR NÚMERO
+        context.awaitingMenuChoice = true;
         return;
     }
-
-    // Para todas as outras respostas diretas
     let respostaFinal;
     if (itemParaResponder.funcaoResposta) respostaFinal = itemParaResponder.funcaoResposta();
     else if (typeof itemParaResponder.resposta === 'function') respostaFinal = respostaAleatoria(itemParaResponder.resposta(nomeUsuario));
     else respostaFinal = respostaAleatoria(itemParaResponder.resposta);
-
     context.lastTopic = itemParaResponder.id;
-    // A linha "awaitingMenuChoice = false" foi removida daqui, o que está correto.
-
-    // As duas linhas abaixo trazem de volta o efeito de "a escrever..."
     await chat.sendStateTyping();
     await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 500));
-    
     await msg.reply(respostaFinal);
 }
 
@@ -290,7 +262,7 @@ function start() {
 
     client.on('ready', () => {
         console.log('✅ Bot está pronto e conectado ao WhatsApp!');
-        iniciarAgendadores(client); // Inicia os nossos agendadores
+        iniciarAgendadores(client);
         client.on('message', (msg) => handleMessage(msg, userContext, client));
     });
   
