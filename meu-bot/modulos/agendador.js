@@ -44,16 +44,38 @@ function iniciarAgendadores(client) {
     
     // 1. AGENDADOR DE DIVULGAÇÃO EM GRUPO
     console.log('[AGENDADOR] Iniciando agendador de mensagens de divulgação.');
-    const mensagensGerais = [
-        "Paz e bem! 🙏 \nJá imaginou um final de semana para renovar a fé, fazer amigos e viver algo que só Deus pode proporcionar? Esse é o nosso Retiro Kerigmático! As inscrições estão abertas. Fale comigo no privado para saber como participar!",
-        "Ei, você! \nSentindo o chamado para algo novo? ✨ O Retiro Kerigmático do JCC foi pensado para você. Um tempo de pausa, oração e encontro. Venha viver essa alegria com a gente!",
-        "🎶 Muita música, louvor, adoração, partilhas e amizades para a vida toda!\nO Retiro Kerigmático do JCC está chegando e as vagas já estão sendo preenchidas. Garanta a sua e venha fazer parte desta família!",
-        `O retiro acontece nos dias 22, 23 e 24 de agosto! Já marcou na sua agenda?\n A inscrição custa apenas R$${config.VALOR_INSCRICAO} e você pode pagar por PIX. Mais informações? É só me perguntar!`,
-        "Às vezes, tudo o que precisamos é de uma pausa para ouvir a voz de Deus.\n✝️ O Retiro JCC é essa oportunidade de se reconectar e transformar a sua vida. As inscrições estão abertas!",
-        "Procurando um lugar para fazer amigos que partilham da mesma fé? 😊\nO nosso retiro é sobre isso: comunidade, partilha e muita alegria. Não venha só, traga um amigo! Chame no privado para mais detalhes.",
-        "Está pensando 'será que este retiro é para mim?'\nA resposta é SIM! Se você tem um coração aberto, Deus tem algo para ti. Dê o primeiro passo, a sua vaga está à sua espera. Inscrições abertas!",
-        "Prepare-se para um fim de semana com pregações que tocam a alma, momentos de oração profunda e louvores que nos elevam. 🔥\nO Retiro Kerigmático é uma experiência completa. Já se inscreveu?"
-    ];
+const mensagensGerais = [
+    // --- MENSAGENS APRIMORADAS COM QUEBRAS DE LINHA ---
+    "Paz e bem! 🙏\nJá pensou em um fim de semana para renovar sua fé, fazer amizades incríveis e viver algo transformador com Deus? 💛\nEsse é o nosso *Retiro Kerigmático*!\nInscrições abertas — fale comigo no privado e descubra como participar.",
+
+    "Sente que Deus está te chamando para algo novo? ✨\nO *Retiro Kerigmático do JCC* é esse lugar de pausa, reencontro e renovação.\nVocê não está aqui por acaso… vem com a gente viver essa experiência única!",
+
+    "🎶 Louvor, oração, amizade e momentos que marcam para sempre!\nNosso retiro está chegando, e as vagas estão voando!\nGaranta já a sua e venha viver um fim de semana com Deus como você nunca viveu.",
+
+    `🗓 Já marcou aí?\nO Retiro será nos dias 22, 23 e 24 de agosto!\nO investimento é de apenas R$${config.VALOR_INSCRICAO} e o pagamento pode ser feito via PIX.\nQuer saber mais? Só me chamar!`,
+
+    "✝️ Às vezes, tudo o que a alma precisa é de silêncio e presença.\nO *Retiro Kerigmático do JCC* é esse respiro — um encontro profundo com Deus.\nInscrições abertas. Venha dar esse passo!",
+
+    "👥 Quer conhecer pessoas que compartilham da mesma fé?\nO retiro é lugar de partilha, comunhão e amizade verdadeira.\nChama um amigo e venham juntos viver essa alegria!",
+
+    "🤔 \"Será que esse retiro é para mim?\"\nSim, é pra você que quer algo novo, verdadeiro e profundo com Deus.\nSeja qual for sua caminhada, sua vaga está aqui.\nDê o primeiro passo!",
+
+    "🔥 Pregações que tocam, orações que renovam e louvores que nos elevam!\nO *Retiro Kerigmático* é uma vivência completa de fé.\nVocê não vai sair o mesmo.\nJá fez sua inscrição?",
+
+    "⏸️ Na correria da vida, que tal apertar o “pause”?\nO *Retiro JCC* é esse tempo de respiro, silêncio e reconexão.\nDê espaço para o que realmente importa.\nEstamos te esperando!",
+
+    "❤️‍🔥 Você já ouviu falar do *Kerigma*?\nÉ o primeiro e mais poderoso anúncio do amor de Deus.\nNosso retiro é centrado nessa verdade que transforma vidas.\nQuer experimentar?\nAs inscrições estão abertas!",
+
+    "🌿 Está procurando paz, respostas ou um novo recomeço?\nTalvez o que você procura esteja nesse final de semana com Deus.\nO *Retiro Kerigmático* é um convite ao encontro.\nTopa?",
+
+    "❄️ A gente sabe: dar o primeiro passo dá medo.\nMas prometemos que você será acolhido com carinho e alegria.\nDê esse \"sim\" e deixe Deus surpreender você. 🤗",
+
+    "⚡️ Um retiro feito por jovens e para jovens!\nCheio de energia, verdade e fé vivida de forma autêntica.\nSe é isso que você busca, o seu lugar é com a gente.\nBora?",
+
+    "💸 Não é um gasto. É um investimento na sua vida com Deus.\nUm fim de semana que pode transformar seu coração e renovar seus dias.\nE o melhor? Com valor acessível.\nVamos juntos?"
+];
+
+
     const mensagensDeUrgencia = [
         "⚠️ ATENÇÃO! O tempo está voando e as vagas para o nosso retiro estão diminuindo! Não deixe para a última hora. O prazo para se inscrever é até 18 de agosto. Garanta já o seu lugar!",
         "Contagem regressiva para o fim das inscrições!\n 🔥 Você não vai querer correr o risco de ficar de fora, não é? O seu 'sim' pode transformar o seu final de semana. #VagasLimitadas #RetiroJCC",
@@ -98,7 +120,7 @@ function iniciarAgendadores(client) {
                 // Ajustado para o novo horário de envio da arte (9h)
                 if (horaAtual === 9) {
                     try {
-                        const media = MessageMedia.fromFilePath('./arte-retiro.png');
+                        const media = MessageMedia.fromFilePath('./arte-retiro.jpeg');
                         client.sendMessage(grupoId, media, { caption: mensagemAleatoria });
                     } catch (e) { client.sendMessage(grupoId, mensagemAleatoria); }
                 } else {

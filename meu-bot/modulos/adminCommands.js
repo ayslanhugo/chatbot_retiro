@@ -41,7 +41,7 @@ async function handleAdminCommand(command, msg, client) {
             const numerosInscritos = new Set(inscritos.map(i => i.numero));
             // --- FIM DA NOVA LÓGICA ---
 
-            const media = MessageMedia.fromFilePath('./arte-retiro.png');
+            const media = MessageMedia.fromFilePath('./arte-retiro.jpeg');
             const groupChat = await client.getChatById(groupId);
             const allParticipants = groupChat.participants;
 
