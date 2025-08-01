@@ -57,6 +57,16 @@ async function handleMessage(msg, userContext, client) {
 
     if (isUserFlooding(from)) { return; }
 
+    if (texto.toLowerCase() === 'sair') {
+        const blacklist = lerBlacklist();
+        if (!blacklist.includes(from)) {
+            blacklist.push(from);
+            salvarBlacklist(blacklist);
+        }
+        await msg.reply("Entendido. Você não receberá mais mensagens automáticas de lembrete. Se precisar de algo, é só chamar!");
+        return;
+    }
+
     if (texto.startsWith('/')) {
         if (config.ADMIN_IDS && config.ADMIN_IDS.includes(from)) {
             const command = texto.split(' ')[0];
@@ -70,7 +80,7 @@ async function handleMessage(msg, userContext, client) {
     if (msg.hasMedia && !PALAVRAS_CHAVE_COMPROVANTE.some(p => texto.toLowerCase().includes(p))) {
         const mimetype = msg._data.mimetype || '';
         if (mimetype.startsWith('image/') || mimetype === 'application/pdf') {
-            const textoDeInstrucao = `Olá! Recebi um arquivo aqui. 😊\n\nSe este é o seu comprovante de pagamento, peço que o envie novamente, mas desta vez, escrevendo a palavra *comprovante* na legenda, como no exemplo. 👇`;
+            const textoDeInstrucao = `Olá! Recebi um arquivo aqui. 😊\n\nSe este é o seu comprovante de pagamento, peço que o envie novamente, mas desta vez, escrevendo a palavra *comprovante* na legenda, como no exemplo. 👆🏻`;
             try {
                 const mediaExemplo = MessageMedia.fromFilePath('./exemplo-comprovante.jpeg');
                 await client.sendMessage(msg.from, mediaExemplo, { caption: textoDeInstrucao });
@@ -82,7 +92,7 @@ async function handleMessage(msg, userContext, client) {
     }
 
     if (!userContext[from]) {
-        userContext[from] = { awaitingDetails: false, awaitingConfirmation: false, pendingRegistrationData: null, pendingReceiptMsg: null, awaitingRegistrationChoice: false, lastTopic: null, awaitingMenuChoice: false };
+        userContext[from] = { awaitingDetails: false, awaitingConfirmation: false, pendingRegistrationData: null, pendingReceiptMsg: null, awaitingRegistrationChoice: false, lastTopic: null, awaitingMenuChoice: false, awaitingPresentialPDFChoice: false };
     }
     const context = userContext[from];
     const contato = await msg.getContact();
@@ -92,20 +102,10 @@ async function handleMessage(msg, userContext, client) {
         const escolha = texto.toLowerCase();
         if (['1', 'sim', 'confirmar'].includes(escolha)) {
             const dataParaSalvar = context.pendingRegistrationData;
-            const nomeCompletoInscrito = dataParaSalvar[1];
-            try {
-                const comprovanteMsg = context.pendingReceiptMsg;
-                await comprovanteMsg.forward(config.GRUPO_ID_ADMIN);
-                const tesoureiroId = config.TESOUREIRO_ID;
-                const tesoureiroNumber = tesoureiroId.split('@')[0];
-                const textoMencao = `📄 Inscrição confirmada!\n\n*Nome:* ${nomeCompletoInscrito}\n*Número:* ${from.replace('@c.us', '')}\n\nTesoureiro: @${tesoureiroNumber}, por favor, confirme o recebimento.`;
-                await client.sendMessage(config.GRUPO_ID_ADMIN, textoMencao, { mentions: [tesoureiroId] });
-            } catch (adminError) { console.error("[ERRO ADMIN] Falha ao enviar para o grupo de admin:", adminError); }
             if (await appendToSheet(dataParaSalvar)) {
                 await msg.reply(`Perfeito! Inscrição confirmada e dados guardados. 🙌`);
                 const leads = lerLeads();
                 if (leads[from]) {
-                    console.log(`[LEADS] Removendo usuário ${nomeUsuario} (${from}) da lista de leads pois a inscrição foi concluída.`);
                     delete leads[from];
                     salvarLeads(leads);
                 }
@@ -114,13 +114,31 @@ async function handleMessage(msg, userContext, client) {
             }
             userContext[from] = {};
         } else if (['2', 'nao', 'não', 'corrigir'].includes(escolha)) {
-            await msg.reply('Sem problemas! O seu comprovativo está guardado. Por favor, envie os seus dados novamente, com atenção, cada um numa nova linha:\n\n1. Seu nome completo\n2. Seu e-mail\n3. Nome do responsável (se for menor)');
+            await msg.reply('Sem problemas! O seu comprovativo está guardado. Por favor, envie os seus dados novamente, com atenção:\n\n1. Seu nome completo\n2. Seu e-mail\n3. Nome do responsável (se for menor)');
             context.awaitingDetails = true;
             context.awaitingConfirmation = false;
             context.pendingRegistrationData = null;
         } else {
             await msg.reply("Não entendi. Por favor, digite *1 para Confirmar* ou *2 para Corrigir*.");
         }
+        return;
+    }
+
+    // Bloco para enviar o PDF da ficha presencial
+    if (context.awaitingPresentialPDFChoice) {
+        if (texto === '1') {
+            await msg.reply("Ótimo! Preparando o envio do PDF...");
+            try {
+                const media = MessageMedia.fromFilePath('./ficha-inscricao.pdf');
+                await client.sendMessage(msg.from, media);
+            } catch (e) {
+                console.error("ERRO: Falha ao enviar o PDF da ficha de inscrição.", e.message);
+                await msg.reply("Peço desculpa, tive um problema para encontrar o arquivo da ficha.");
+            }
+        } else {
+            await msg.reply("Ok, sem problemas! Se mudar de ideias, é só pedir. Estamos à sua espera no grupo de oração! 🙏");
+        }
+        userContext[from] = {};
         return;
     }
 
@@ -133,6 +151,9 @@ async function handleMessage(msg, userContext, client) {
             context.awaitingRegistrationChoice = false;
             const item = memoria.find(i => i.id === 'inscricao_presencial');
             if (item) await msg.reply(item.resposta);
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            await msg.reply("Gostaria de receber a ficha de inscrição em PDF para já ir adiantando o preenchimento?\n\nDigite *1* - Sim, quero o PDF\nDigite *2* - Não, obrigado");
+            context.awaitingPresentialPDFChoice = true;
         } else if (texto === '3') {
             context.awaitingRegistrationChoice = false;
             await msg.reply("Inscrição cancelada. Se precisar de algo mais, estou por aqui! 👍");
@@ -154,7 +175,7 @@ async function handleMessage(msg, userContext, client) {
                  await msg.reply('Ops! Encontrei a opção no menu, mas estou com dificuldade de achar a resposta.');
             }
         } else {
-            await msg.reply("Desculpe, não encontrei essa opção no menu. Por favor, digite um dos números listados.");
+            await msg.reply("Desculpe, não encontrei essa opção no menu.");
         }
         return;
     }
