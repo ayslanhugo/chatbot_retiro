@@ -10,12 +10,17 @@ const { getInscritos } = require('./googleServices.js');
 function lerEstadoLembretes() {
     try {
         if (fs.existsSync('./estado_lembretes.json')) {
-            const data = fs.readFileSync('./estado_lembretes.json');
+            const data = fs.readFileSync('./estado_lembretes.json', 'utf-8');
+            // Se o arquivo estiver vazio, retorna um objeto vazio para evitar o erro
+            if (data.trim() === '') {
+                return {};
+            }
             return JSON.parse(data);
         }
     } catch (error) { console.error('Erro ao ler o estado dos lembretes:', error); }
     return {};
 }
+
 
 function salvarEstadoLembretes(estado) {
     try {
@@ -26,7 +31,11 @@ function salvarEstadoLembretes(estado) {
 function lerLeads() {
     try {
         if (fs.existsSync('./leads.json')) {
-            const data = fs.readFileSync('./leads.json');
+            const data = fs.readFileSync('./leads.json', 'utf-8');
+            // Se o arquivo estiver vazio, retorna um objeto vazio para evitar o erro
+            if (data.trim() === '') {
+                return {};
+            }
             return JSON.parse(data);
         }
     } catch (error) { console.error('Erro ao ler o arquivo de leads:', error); }
@@ -84,9 +93,8 @@ const mensagensGerais = [
         "É ESSA SEMANA!\n😱 É isso mesmo! Daqui a poucos dias estaremos juntos para viver o nosso tão esperado retiro. Já começou a arrumar a mala e o coração?",
         "Apenas alguns dias nos separam de uma experiência que vai marcar a sua vida.\nA equipe está em oração por cada um de vocês. Que venha o Retiro Kerigmático! 🙌",
     ];
-// A NOVA VERSÃO CORRIGIDA
 
-    const HORAS_DE_ENVIO = [9, 13, 20, 3]; // Horários que você ajustou
+    const HORAS_DE_ENVIO = [13, 3]; // Horários que você ajustou
     const intervaloDeVerificacao = 1000 * 60 * 1;
 
     setInterval(() => {
@@ -117,8 +125,8 @@ const mensagensGerais = [
             if (!config.GRUPOS_DIVULGACAO_IDS || config.GRUPOS_DIVULGACAO_IDS.length === 0) { return; }
             
             for (const grupoId of config.GRUPOS_DIVULGACAO_IDS) {
-                // Ajustado para o novo horário de envio da arte (9h)
-                if (horaAtual === 9) {
+                // Ajustado para o novo horário de envio da arte (3h)
+                if (horaAtual === 3) {
                     try {
                         const media = MessageMedia.fromFilePath('./arte-retiro.jpeg');
                         client.sendMessage(grupoId, media, { caption: mensagemAleatoria });

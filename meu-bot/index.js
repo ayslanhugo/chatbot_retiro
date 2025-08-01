@@ -7,8 +7,8 @@ const config = require('./config.js');
 
 // Importando os nossos novos módulos
 const { iniciarAgendadores, lerLeads, salvarLeads } = require('./modulos/agendador.js');
-const { getSheetData, appendToSheet, detectIntent } = require('./modulos/googleServices.js');
-const { botStartTime, respostaAleatoria, smartMatch } = require('./modulos/utils.js');
+const { getSheetData, appendToSheet, detectIntent, getInscritos } = require('./modulos/googleServices.js');
+const { botStartTime, respostaAleatoria, smartMatch, normalizarTelefoneBrasil} = require('./modulos/utils.js');
 const { handleAdminCommand } = require('./modulos/adminCommands.js');
 
 // Constantes e funções que fazem sentido continuar aqui
@@ -212,33 +212,55 @@ async function handleMessage(msg, userContext, client) {
 }
 
 async function responderComItem(itemParaResponder, msg, context, nomeUsuario, chat) {
+    // --- LÓGICA DE REGISTO DE LEAD ATUALIZADA ---
     if (INTENTS_DE_ALTO_INTERESSE.includes(itemParaResponder.id)) {
-        console.log(`[LEADS] Detectado alto interesse do usuário ${nomeUsuario} (${msg.from})`);
-        const leads = lerLeads();
-        leads[msg.from] = {
-            nome: nomeUsuario,
-            lastInteraction: new Date().toISOString(),
-            followUpSent: false
-        };
-        salvarLeads(leads);
+        
+        const inscritos = await getInscritos();
+        if (inscritos) {
+            const numerosInscritos = new Set(inscritos.map(i => i.numero));
+
+            // AQUI ESTÁ A CORREÇÃO: Normalizamos o ID do usuário atual ANTES de verificar
+            const idUsuarioNormalizado = `${normalizarTelefoneBrasil(msg.from)}@c.us`;
+
+            if (!numerosInscritos.has(idUsuarioNormalizado)) {
+                // Se o usuário NÃO está na lista de inscritos, adiciona-o como lead.
+                console.log(`[LEADS] Detectado alto interesse do usuário ${nomeUsuario} (${msg.from}). Adicionando/atualizando lead.`);
+                const leads = lerLeads();
+                leads[msg.from] = {
+                    nome: nomeUsuario,
+                    lastInteraction: new Date().toISOString(),
+                    followUpSent: false
+                };
+                salvarLeads(leads);
+            } else {
+                // Se o usuário JÁ está inscrito, apenas regista no log e não faz nada.
+                console.log(`[LEADS] Usuário ${nomeUsuario} (${msg.from}) já está inscrito. Ignorando adição à lista de leads.`);
+            }
+        }
     }
+    // --- FIM DA LÓGICA DE LEAD ---
+
     if (itemParaResponder.id === 'fazer_inscricao') {
         const pergunta = memoria.find(i => i.id === 'fazer_inscricao').resposta(nomeUsuario);
         await msg.reply(pergunta);
         context.awaitingRegistrationChoice = true;
         return;
     }
+
     if (['saudacao', 'ajuda', 'confirmacao_positiva'].includes(itemParaResponder.id)) { 
         const saudacao = memoria.find(i => i.id === 'saudacao').resposta(nomeUsuario);
         await msg.reply(saudacao);
         context.awaitingMenuChoice = true;
         return;
     }
+
     let respostaFinal;
     if (itemParaResponder.funcaoResposta) respostaFinal = itemParaResponder.funcaoResposta();
     else if (typeof itemParaResponder.resposta === 'function') respostaFinal = respostaAleatoria(itemParaResponder.resposta(nomeUsuario));
     else respostaFinal = respostaAleatoria(itemParaResponder.resposta);
+
     context.lastTopic = itemParaResponder.id;
+
     await chat.sendStateTyping();
     await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 500));
     await msg.reply(respostaFinal);
