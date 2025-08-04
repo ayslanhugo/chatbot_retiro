@@ -77,7 +77,7 @@ async function appendToSheet(data) {
         const sheets = google.sheets({ version: 'v4', auth });
         await sheets.spreadsheets.values.append({ 
             spreadsheetId: config.SPREADSHEET_ID, 
-            range: 'Página1!A:E', 
+            range: 'Página1!A:F', 
             valueInputOption: 'USER_ENTERED', 
             requestBody: { values: [data] } 
         });

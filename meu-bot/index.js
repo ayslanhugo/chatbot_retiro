@@ -1,4 +1,4 @@
-// index.js (Versão Final e Corrigida)
+// index.js
 
 const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
@@ -102,6 +102,29 @@ async function handleMessage(msg, userContext, client) {
         const escolha = texto.toLowerCase();
         if (['1', 'sim', 'confirmar'].includes(escolha)) {
             const dataParaSalvar = context.pendingRegistrationData;
+            const nomeCompletoInscrito = dataParaSalvar[1];
+            
+            // --- LÓGICA DE ENVIO PARA O ADMIN MELHORADA ---
+            try {
+                const comprovanteMsg = context.pendingReceiptMsg;
+                if (comprovanteMsg && comprovanteMsg.hasMedia) {
+                    // 1. Descarrega a mídia do comprovativo
+                    const media = await comprovanteMsg.downloadMedia();
+                    
+                    // 2. Envia a mídia como uma NOVA mensagem para o grupo
+                    const tesoureiroId = config.TESOUREIRO_ID;
+                    const tesoureiroNumber = tesoureiroId.split('@')[0];
+                    const textoMencao = `📄 Nova inscrição recebida!\n\n*Nome:* ${nomeCompletoInscrito}\n*Número:* ${from.replace('@c.us', '')}\n\nTesoureiro: @${tesoureiroNumber}, por favor, confirme o pagamento.`;
+
+                    await client.sendMessage(config.GRUPO_ID_ADMIN, media, { caption: textoMencao, mentions: [tesoureiroId] });
+                }
+            } catch (adminError) { 
+                console.error("[ERRO ADMIN] Falha ao enviar comprovante para o grupo de admin:", adminError.message);
+                // Envia uma notificação de texto se o envio da mídia falhar
+                await client.sendMessage(config.GRUPO_ID_ADMIN, `🚨 ALERTA: Falha ao processar o anexo da inscrição de ${nomeCompletoInscrito}. Inscrição adicionada à planilha, mas o comprovante precisa de ser verificado manualmente.`);
+            }
+            // --- FIM DA LÓGICA MELHORADA ---
+
             if (await appendToSheet(dataParaSalvar)) {
                 await msg.reply(`Perfeito! Inscrição confirmada e dados guardados. 🙌`);
                 const leads = lerLeads();
@@ -114,7 +137,7 @@ async function handleMessage(msg, userContext, client) {
             }
             userContext[from] = {};
         } else if (['2', 'nao', 'não', 'corrigir'].includes(escolha)) {
-            await msg.reply('Sem problemas! O seu comprovativo está guardado. Por favor, envie os seus dados novamente, com atenção:\n\n1. Seu nome completo\n2. Seu e-mail\n3. Nome do responsável (se for menor)');
+            await msg.reply('Sem problemas! O seu comprovante está guardado. Por favor, envie os seus dados novamente, com atenção:\n\n1. Seu nome completo\n2. Seu e-mail\n3. Nome do responsável (se for menor de 18 anos)\n4. Você é membro efetivo do JCC? (Responda com *Sim* ou *Não*)');
             context.awaitingDetails = true;
             context.awaitingConfirmation = false;
             context.pendingRegistrationData = null;
@@ -186,9 +209,20 @@ async function handleMessage(msg, userContext, client) {
         const nomeCompleto = detalhes[0] || 'Não informado';
         const email = detalhes[1] || 'Não informado';
         const responsavel = detalhes[2] || 'N/A';
-        const dataParaPlanilha = [new Date().toLocaleString('pt-BR', { timeZone: 'America/Bahia' }), nomeCompleto, email, contato.number, responsavel];
+        const ehMembro = detalhes[3] || 'Não informado';
+
+        const dataParaPlanilha = [
+            new Date().toLocaleString('pt-BR', { timeZone: 'America/Bahia' }), 
+            nomeCompleto, 
+            email, 
+            contato.number, 
+            responsavel,
+            ehMembro.trim() // Adiciona a nova informação à planilha
+        ];
         context.pendingRegistrationData = dataParaPlanilha;
-        const confirmationMessage = `Por favor, confirme se os seus dados estão corretos:\n\n*Nome:* ${nomeCompleto}\n*E-mail:* ${email}\n*Responsável:* ${responsavel}\n\nDigite *1* - Sim, confirmar\nDigite *2* - Não, quero corrigir`;
+
+        const confirmationMessage = `Por favor, confirme se os seus dados estão corretos:\n\n*Nome:* ${nomeCompleto}\n*E-mail:* ${email}\n*Responsável:* ${responsavel}\n*É membro do efetivo do JCC?* ${ehMembro}\n\nDigite *1* - Sim, confirmar\nDigite *2* - Não, quero corrigir`;
+        
         await msg.reply(confirmationMessage);
         context.awaitingDetails = false;
         context.awaitingConfirmation = true;
@@ -197,7 +231,7 @@ async function handleMessage(msg, userContext, client) {
 
     if (msg.hasMedia && PALAVRAS_CHAVE_COMPROVANTE.some(p => texto.toLowerCase().includes(p))) {
         context.pendingReceiptMsg = msg;
-        const confirmacaoUsuario = respostaAleatoria([ `Obrigado, ${nomeUsuario}! Comprovante recebido. 🙏\n\nAgora, por favor, envie os seguintes dados, *cada um em uma linha*:\n\n1. Seu nome completo\n2. Seu melhor e-mail\n3. Nome do responsável (se for menor de 18 anos, senão ignore)` ]);
+        const confirmacaoUsuario = respostaAleatoria([ `Obrigado, ${nomeUsuario}! Comprovante recebido. 🙏\n\nAgora, por favor, envie os seguintes dados, *cada um em uma linha*:\n\n1. Seu nome completo\n2. Seu melhor e-mail\n3. Nome do responsável (se for menor)\n4. Você é membro efetivo do JCC? (Responda com *Sim* ou *Não*)` ]);
         await msg.reply(confirmacaoUsuario);
         context.awaitingDetails = true;
         return;
