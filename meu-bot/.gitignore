@@ -4,13 +4,19 @@ node_modules/
 # Ignorar ficheiros de sessão e cache do whatsapp-web.js
 .wwebjs_auth/
 .wwebjs_cache/
-session/
-meu-bot/
 
-# Ignorar ficheiros de credenciais e chaves de API
+# Ignorar ficheiros de credenciais e chaves de API (sensíveis)
 credentials.json
 dialogflow-credentials.json
+
+# Ignorar ficheiros de estado gerados pelo bot (não devem ser partilhados)
+meu-bot/leads.json
+meu-bot/estado_lembretes.json
 
 # Ignorar ficheiros de log e ambiente
 *.log
 .env
+
+# Ignorar ficheiros de estado gerados pelo bot
+leads.json
+estado_lembretes.json

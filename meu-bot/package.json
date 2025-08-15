@@ -13,6 +13,7 @@
   "type": "commonjs",
   "dependencies": {
     "@google-cloud/dialogflow": "^7.2.0",
+    "express": "^5.1.0",
     "googleapis": "^152.0.0",
     "moment": "^2.30.1",
     "moment-timezone": "^0.6.0",

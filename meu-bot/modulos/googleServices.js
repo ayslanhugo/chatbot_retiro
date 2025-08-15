@@ -10,9 +10,9 @@ const { normalizarTelefoneBrasil } = require('./utils.js');
  * @returns {Promise<Array<{nome: string, numero: string}>|null>}
  */
 async function getInscritos() {
-    console.log('[SHEETS] Lendo a lista cde inscritos para lembretes...');
+    console.log('[SHEETS] Lendo a lista de inscritos para lembretes...');
     try {
-        const auth = new google.auth.GoogleAuth({ keyFile: 'credentials.json', scopes: 'https://www.googleapis.com/auth/spreadsheets.readonly' });
+        const auth = new google.auth.GoogleAuth({ keyFile: '../credentials.json', scopes: 'https://www.googleapis.com/auth/spreadsheets.readonly' });
         const sheets = google.sheets({ version: 'v4', auth });
         const response = await sheets.spreadsheets.values.get({
             spreadsheetId: config.SPREADSHEET_ID,
@@ -53,11 +53,11 @@ async function getInscritos() {
  */
 async function getSheetData() {
     try {
-        const auth = new google.auth.GoogleAuth({ keyFile: 'credentials.json', scopes: 'https://www.googleapis.com/auth/spreadsheets.readonly' });
+        const auth = new google.auth.GoogleAuth({ keyFile: '../credentials.json', scopes: 'https://www.googleapis.com/auth/spreadsheets.readonly' });
         const sheets = google.sheets({ version: 'v4', auth });
         const response = await sheets.spreadsheets.values.get({
             spreadsheetId: config.SPREADSHEET_ID,
-            range: 'Página1!A:A',
+            range: 'Página1!A:F',
         });
         return response.data.values || [];
     } catch (error) {
@@ -73,7 +73,7 @@ async function getSheetData() {
  */
 async function appendToSheet(data) {
     try {
-        const auth = new google.auth.GoogleAuth({ keyFile: 'credentials.json', scopes: 'https://www.googleapis.com/auth/spreadsheets' });
+        const auth = new google.auth.GoogleAuth({ keyFile: '../credentials.json', scopes: 'https://www.googleapis.com/auth/spreadsheets' });
         const sheets = google.sheets({ version: 'v4', auth });
         await sheets.spreadsheets.values.append({ 
             spreadsheetId: config.SPREADSHEET_ID, 
@@ -96,7 +96,7 @@ async function appendToSheet(data) {
  */
 async function detectIntent(sessionId, query) {
     try {
-        const sessionClient = new dialogflow.SessionsClient({ keyFilename: './dialogflow-credentials.json' });
+        const sessionClient = new dialogflow.SessionsClient({ keyFilename: '../dialogflow-credentials.json' });
         const sessionPath = sessionClient.projectAgentSessionPath(config.GCLOUD_PROJECT_ID, sessionId);
         const request = {
             session: sessionPath,
@@ -110,9 +110,28 @@ async function detectIntent(sessionId, query) {
     }
 }
 
+async function appendMultipleToSheet(dataRows) {
+    try {
+        const auth = new google.auth.GoogleAuth({ keyFile: '../credentials.json', scopes: 'https://www.googleapis.com/auth/spreadsheets' });
+        const sheets = google.sheets({ version: 'v4', auth });
+        await sheets.spreadsheets.values.append({ 
+            spreadsheetId: config.SPREADSHEET_ID, 
+            range: 'Página1!A:F', 
+            valueInputOption: 'USER_ENTERED', 
+            requestBody: { values: dataRows } // "values" agora recebe uma lista de linhas
+        });
+        return true;
+    } catch (error) {
+        console.error('[SHEETS] Erro ao escrever múltiplas linhas na planilha:', error.message);
+        return false;
+    }
+}
+
+// Atualize a sua linha module.exports para incluir a nova função
 module.exports = {
     getInscritos,
     getSheetData,
     appendToSheet,
+    appendMultipleToSheet, // Adicione esta linha
     detectIntent
 };

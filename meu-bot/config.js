@@ -11,7 +11,9 @@ module.exports = {
     ADMIN_IDS: [
         '557588589655@c.us',
         '557591884047@c.us',
-        '557592022434@c.us'
+        '557592022434@c.us',
+        '557591065165@c.us',
+        '557588154250@c.us'
     ],
 
     // --- Constantes de Conteúdo (de memoria.js) ---

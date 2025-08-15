@@ -106,7 +106,16 @@ const memoria = [
     {
         id: 'fazer_inscricao',
         chaves: ['ficha', 'pdf', 'formulario', 'inscrever', 'inscrição', 'participar', 'como faz', 'entrar', 'quero ir'],
-            resposta: (nome) => `Que alegria saber do seu interesse, ${nome}! 😊\n\n⚠️ *ATENÇÃO: Se o participante for menor de 18 anos, a inscrição deve ser feita obrigatoriamente de forma PRESENCIAL, acompanhado(a) de um responsável.*\n\nEntendido isso, como você prefere continuar?\n\n1️⃣ *Online (Apenas para maiores de 18 anos)*\nEu envio-lhe a ficha, você preenche, paga por PIX e envia-me o comprovante.\n\n2️⃣ *Presencialmente*\nVocê pode ir ao nosso grupo de oração e fazer a sua inscrição diretamente com a nossa equipe.\n\n3️⃣ *Cancelar*\nVoltar ao menu anterior.\n\nDigite *1* para Online, *2* para Presencial ou *3* para Cancelar.`
+            resposta: (nome) => `Que alegria saber do seu interesse, ${nome}! 😊\n\n` +
+    `⚠️ *ATENÇÃO: Se o participante for menor de 18 anos, a inscrição deve ser feita obrigatoriamente de forma PRESENCIAL, acompanhado(a) da assinatura de um responsável.*\n\n` +
+    `Entendido isso, como você prefere continuar?\n\n` +
+    `1️⃣ *Online (Apenas para maiores de 18 anos)*\n` +
+    `Eu envio-lhe a ficha, você preenche, paga por PIX e envia-me o comprovante.\n\n` +
+    `2️⃣ *Presencialmente*\n` +
+    `Você pode ir ao nosso grupo de oração para se inscrever. Para agilizar, posso enviar-lhe a ficha em PDF para você imprimir e já levar preenchida!\n\n` +
+    `3️⃣ *Cancelar*\n` +
+    `Voltar ao menu anterior.\n\n` +
+    `Digite *1* para Online, *2* para Presencial ou *3* para Cancelar.`
 
         },
 

@@ -4,14 +4,11 @@ const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const { memoria, MENU_PRINCIPAL } = require('./memoria.js');
 const config = require('./config.js');
-
-// Importando os nossos novos módulos
-const { iniciarAgendadores, lerLeads, salvarLeads } = require('./modulos/agendador.js');
+const { iniciarAgendadores, lerLeads, salvarLeads, lerBlacklist, salvarBlacklist } = require('./modulos/agendador.js');
 const { getSheetData, appendToSheet, detectIntent, getInscritos } = require('./modulos/googleServices.js');
-const { botStartTime, respostaAleatoria, smartMatch, normalizarTelefoneBrasil} = require('./modulos/utils.js');
+const { botStartTime, respostaAleatoria, normalizarTelefoneBrasil } = require('./modulos/utils.js');
 const { handleAdminCommand } = require('./modulos/adminCommands.js');
 
-// Constantes e funções que fazem sentido continuar aqui
 const floodControl = {};
 const MESSAGE_GRACE_PERIOD_SECONDS = 30;
 const PALAVRAS_CHAVE_COMPROVANTE = ['comprovante', 'pagamento', 'pix', 'paguei', 'inscrição', 'recibo', 'transferência', 'transferencia', 'tá pago', 'ta pago', 'comprovando'];
@@ -68,8 +65,10 @@ async function handleMessage(msg, userContext, client) {
     }
 
     if (texto.startsWith('/')) {
+        const command = texto.split('\n')[0].trim(); 
+
         if (config.ADMIN_IDS && config.ADMIN_IDS.includes(from)) {
-            const command = texto.split(' ')[0];
+            // Passamos o 'command' limpo, e não a mensagem inteira.
             await handleAdminCommand(command, msg, client);
         } else {
             console.log(`[SEGURANÇA] Comando de admin "${texto}" bloqueado para o usuário ${from}.`);
@@ -350,3 +349,30 @@ function start() {
 if (require.main === module) {
     start();
 }
+
+const express = require('express');
+const apiApp = express();
+const apiPort = 3001; // Uma porta diferente para a API
+
+apiApp.use(express.json());
+
+// Exemplo de um endpoint para enviar uma mensagem para um grupo
+apiApp.post('/api/enviar-aviso', async (req, res) => {
+    const { grupoId, mensagem } = req.body;
+    if (!grupoId || !mensagem) {
+        return res.status(400).send({ error: 'Faltam o grupoId ou a mensagem.' });
+    }
+
+    try {
+        await client.sendMessage(grupoId, mensagem);
+        console.log(`[API] Mensagem enviada para ${grupoId} via dashboard.`);
+        res.send({ success: true, message: 'Mensagem enviada com sucesso!' });
+    } catch (error) {
+        console.error(`[API] Erro ao enviar mensagem:`, error);
+        res.status(500).send({ success: false, message: 'Falha ao enviar a mensagem.' });
+    }
+});
+
+apiApp.listen(apiPort, () => {
+  console.log(`✅ API de controle do bot a ouvir em http://localhost:${apiPort}`);
+});
