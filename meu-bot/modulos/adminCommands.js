@@ -1,9 +1,9 @@
 // modulos/adminCommands.js 
 
+const moment = require('moment-timezone');
 const config = require('../config.js');
-const { getSheetData, getInscritos, appendMultipleToSheet } = require('./googleServices.js');
-const { getUptime } = require('./utils.js');
-const { lerLeads } = require('./agendador.js');
+const { getSheetData, getInscritos, appendMultipleToSheet, getMembrosEfetivosInscritos } = require('./googleServices.js');
+const { getUptime, lerLeads } = require('./utils.js');
 
 async function handleAdminCommand(command, msg, client) {
     switch (command) {
@@ -138,6 +138,47 @@ async function handleAdminCommand(command, msg, client) {
             break;
         }
         
+        case '/avisoefetivos': {
+    await msg.reply('⏳ Iniciando o envio de lembretes para os *membros efetivos*.\n\nIsto pode demorar alguns minutos. Avisarei quando terminar.');
+
+    // 1. Calcula os dias restantes (lógica que já conhecemos)
+    const dataAtual = moment().tz("America/Bahia");
+    const dataRetiro = moment(config.DATA_RETIRO, 'YYYY-MM-DD');
+    const diasRestantes = dataRetiro.startOf('day').diff(dataAtual.startOf('day'), 'days');
+
+    // 2. Define a mensagem a ser enviada
+    const criarMensagem = (nome) => `Paz e bem, ${nome.split(' ')[0]}! 🙏\n\nComo membro efetivo do JCC, a sua presença é a força motriz do nosso retiro. Contamos com as suas orações e a sua alegria!\n\nFaltam apenas *${diasRestantes} dias* para o nosso encontro. Que Deus nos prepare para este momento! 🔥`;
+
+    // 3. Busca a lista de membros efetivos
+    const membrosEfetivos = await getMembrosEfetivosInscritos();
+
+    if (!membrosEfetivos || membrosEfetivos.length === 0) {
+        return await msg.reply('❌ Não foram encontrados membros efetivos inscritos na planilha.');
+    }
+
+    let contadorEnvios = 0;
+    // 4. Envia as mensagens com um atraso seguro
+    for (const membro of membrosEfetivos) {
+        try {
+            const mensagemFinal = criarMensagem(membro.nome);
+            await client.sendMessage(membro.numero, mensagemFinal);
+            console.log(`- Lembrete de efetivo enviado para ${membro.nome}`);
+            contadorEnvios++;
+
+            // Atraso crucial para evitar spam
+            const atraso = Math.random() * 8000 + 5000; // Atraso entre 5 e 13 segundos
+            await new Promise(resolve => setTimeout(resolve, atraso));
+
+        } catch (err) {
+            console.error(`- Falha ao enviar lembrete de efetivo para ${membro.numero}: ${err.message}`);
+        }
+    }
+
+    // 5. Confirma a conclusão ao admin
+    await msg.reply(`✅ Disparo concluído!\n\nForam enviadas *${contadorEnvios}* mensagens para os membros efetivos.`);
+    break;
+}
+
         case '/ajuda': {
             const ajuda = `🤖 *Painel de Ajuda - Admin*\n\nAqui estão os comandos disponíveis:\n
 */status* - Verifica se o bot está online.
@@ -145,7 +186,8 @@ async function handleAdminCommand(command, msg, client) {
 */list* - Lista o nome de todos os inscritos.
 */add* - Adiciona múltiplas inscrições de uma vez.
 */leads* - Lista os interessados que ainda não se inscreveram.
-*/ajuda* - Mostra esta mensagem de ajuda.`;
+*/ajuda* - Mostra esta mensagem de ajuda.`
+'*/avisoefetivos* - Envia lembretes para os membros efetivos do JCC.';
             await msg.reply(ajuda);
             break;
         }

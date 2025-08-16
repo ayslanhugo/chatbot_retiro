@@ -124,6 +124,42 @@ async function appendMultipleToSheet(dataRows) {
     } catch (error) {
         console.error('[SHEETS] Erro ao escrever múltiplas linhas na planilha:', error.message);
         return false;
+    }  
+}
+async function getMembrosEfetivosInscritos() {
+    console.log('[SHEETS] Lendo a lista de MEMBROS EFETIVOS inscritos...');
+    try {
+        const auth = new google.auth.GoogleAuth({ keyFile: '../credentials.json', scopes: 'https://www.googleapis.com/auth/spreadsheets.readonly' });
+        const sheets = google.sheets({ version: 'v4', auth });
+        const response = await sheets.spreadsheets.values.get({
+            spreadsheetId: config.SPREADSHEET_ID,
+            range: 'Página1!B2:F',
+        });
+
+        const rows = response.data.values;
+        if (!rows || rows.length === 0) {
+            return [];
+        }
+
+        const membrosEfetivos = rows
+            .filter(row => row[4] && row[4].toLowerCase().trim() === 'sim')
+            .map(row => {
+                const nome = row[0];
+                const numeroTelefone = row[2];
+                if (nome && numeroTelefone) {
+                    const numeroCorrigido = normalizarTelefoneBrasil(numeroTelefone);
+                    return { nome: nome.trim(), numero: `${numeroCorrigido}@c.us` };
+                }
+                return null;
+            })
+            .filter(Boolean);
+
+        console.log(`[SHEETS] ${membrosEfetivos.length} membros efetivos encontrados.`);
+        return membrosEfetivos;
+
+    } catch (error) {
+        console.error('[SHEETS] Erro ao ler a lista de membros efetivos:', error.message);
+        return null;
     }
 }
 
@@ -132,6 +168,7 @@ module.exports = {
     getInscritos,
     getSheetData,
     appendToSheet,
-    appendMultipleToSheet, // Adicione esta linha
+    getMembrosEfetivosInscritos,
+    appendMultipleToSheet,
     detectIntent
 };

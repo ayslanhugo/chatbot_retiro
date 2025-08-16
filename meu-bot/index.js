@@ -4,9 +4,12 @@ const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const { memoria, MENU_PRINCIPAL } = require('./memoria.js');
 const config = require('./config.js');
-const { iniciarAgendadores, lerLeads, salvarLeads, lerBlacklist, salvarBlacklist } = require('./modulos/agendador.js');
+const { iniciarAgendadores } = require('./modulos/agendador.js'); 
 const { getSheetData, appendToSheet, detectIntent, getInscritos } = require('./modulos/googleServices.js');
-const { botStartTime, respostaAleatoria, normalizarTelefoneBrasil } = require('./modulos/utils.js');
+const { 
+    lerLeads, salvarLeads, lerBlacklist, salvarBlacklist, 
+    botStartTime, respostaAleatoria, normalizarTelefoneBrasil 
+} = require('./modulos/utils.js'); 
 const { handleAdminCommand } = require('./modulos/adminCommands.js');
 
 const floodControl = {};
@@ -346,33 +349,7 @@ function start() {
     client.initialize().catch(err => { console.error("Erro CRÍTICO ao inicializar o cliente:", err); });
 }
 
+// O programa principal inicia aqui
 if (require.main === module) {
     start();
 }
-
-const express = require('express');
-const apiApp = express();
-const apiPort = 3001; // Uma porta diferente para a API
-
-apiApp.use(express.json());
-
-// Exemplo de um endpoint para enviar uma mensagem para um grupo
-apiApp.post('/api/enviar-aviso', async (req, res) => {
-    const { grupoId, mensagem } = req.body;
-    if (!grupoId || !mensagem) {
-        return res.status(400).send({ error: 'Faltam o grupoId ou a mensagem.' });
-    }
-
-    try {
-        await client.sendMessage(grupoId, mensagem);
-        console.log(`[API] Mensagem enviada para ${grupoId} via dashboard.`);
-        res.send({ success: true, message: 'Mensagem enviada com sucesso!' });
-    } catch (error) {
-        console.error(`[API] Erro ao enviar mensagem:`, error);
-        res.status(500).send({ success: false, message: 'Falha ao enviar a mensagem.' });
-    }
-});
-
-apiApp.listen(apiPort, () => {
-  console.log(`✅ API de controle do bot a ouvir em http://localhost:${apiPort}`);
-});
