@@ -1,11 +1,51 @@
-// modulos/adminCommands.js 
+// modulos/adminCommands.js (VERSÃO FINAL E CORRIGIDA)
 
-const moment = require('moment-timezone');
 const config = require('../config.js');
-const { getSheetData, getInscritos, appendMultipleToSheet, getMembrosEfetivosInscritos } = require('./googleServices.js');
-const { getUptime, lerLeads } = require('./utils.js');
+const { getSheetData, getInscritos, appendMultipleToSheet, getMembrosEfetivosInscritos, getMembrosVisitantesInscritos } = require('./googleServices.js');
+const { getUptime } = require('./utils.js');
+const { lerLeads } = require('./agendador.js');
 
-async function handleAdminCommand(command, msg, client) {
+// Função auxiliar para criar a pausa entre os envios
+function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function handleAdminCommand(command, msg, client, userContext) {
+    const from = msg.from;
+
+    // LÓGICA DE CONFIRMAÇÃO DE DISPARO
+    if (userContext && userContext[from] && userContext[from].awaitingConfirmationForBroadcast) {
+        const context = userContext[from];
+        
+        if (msg.body.toLowerCase() === 'sim') {
+            const { members, messageToSend } = context.pendingBroadcast;
+            // Mensagem de feedback um pouco mais genérica para funcionar para ambos os grupos
+            await msg.reply(`✅ Ok, confirmação recebida.\n\nIniciando o disparo para *${members.length} membros*. Isso pode levar alguns minutos...`);
+            
+            let successfulSends = 0;
+            for (const member of members) {
+                try {
+                    await client.sendMessage(member.numero, messageToSend);
+                    successfulSends++;
+                    
+                    const randomDelay = 5000 + Math.random() * 5000;
+                    await delay(randomDelay);
+
+                } catch (e) {
+                    console.error(`[DISPARO] Falha ao enviar para ${member.numero}: ${e.message}`);
+                }
+            }
+            await msg.reply(`🚀 Disparo concluído!\n*${successfulSends} de ${members.length}* mensagens foram enviadas com sucesso.`);
+        
+        } else {
+            await msg.reply("❌ Envio cancelado pelo administrador.");
+        }
+        
+        delete userContext[from];
+        return; 
+    }
+
+    // Lógica normal dos comandos
     switch (command) {
         case '/status':
             await msg.reply(`🤖 Olá, admin! Estou online e funcionando.\n*Tempo de atividade:* ${getUptime()}.`);
@@ -54,71 +94,37 @@ async function handleAdminCommand(command, msg, client) {
         }
 
         case '/add': {
-            // 1. Separa a mensagem em linhas, ignorando a primeira linha que contém o comando '/add'.
             const linhas = msg.body.split('\n').slice(1);
-
-            // 2. Verifica se foram enviados dados após o comando. Se não, envia uma mensagem de erro com instruções.
             if (linhas.length === 0 || (linhas[0] && linhas[0].trim() === '')) {
                 return await msg.reply("❌ Erro: Faltam os dados. Utilize o formato:\n\n/add\nNome,email,telefone,responsável,membro(Sim/Não)");
             }
-
-            // 3. Inicializa arrays para guardar as linhas válidas e os números das linhas com erro.
             const rowsParaAdicionar = [];
             const errosDeFormato = [];
-
-            // 4. Itera sobre cada linha de dados enviada.
             for (let i = 0; i < linhas.length; i++) {
                 const linha = linhas[i];
-
-                // Ignora linhas completamente vazias.
                 if (linha.trim() === '') continue;
-
-                // 5. Divide a linha em colunas usando a vírgula como separador e remove espaços em branco.
                 const colunas = linha.split(',').map(c => c.trim());
-
-                // 6. Verifica se a linha tem exatamente 5 colunas.
                 if (colunas.length === 5) {
-                    // 7. Se o formato estiver correto, cria a linha de dados para a planilha.
-                    // Adiciona a data e hora atuais no fuso horário da Bahia como a primeira coluna.
-                    const dataParaPlanilha = [
-                        new Date().toLocaleString('pt-BR', { timeZone: 'America/Bahia' }), // Coluna 'Carimbo de data/hora'
-                        colunas[0], // Nome
-                        colunas[1], // Email
-                        colunas[2], // Telefone
-                        colunas[3], // Responsável
-                        colunas[4]  // Membro (Sim/Não)
-                    ];
-                    // Adiciona a linha formatada ao array de linhas para adicionar.
+                    const dataParaPlanilha = [ new Date().toLocaleString('pt-BR', { timeZone: 'America/Bahia' }), colunas[0], colunas[1], colunas[2], colunas[3], colunas[4] ];
                     rowsParaAdicionar.push(dataParaPlanilha);
                 } else {
-                    // 8. Se o formato estiver incorreto, guarda o número da linha para informar o usuário.
                     errosDeFormato.push(i + 1);
                 }
             }
-
-            // 9. Se houver linhas válidas para adicionar, processa-as.
             if (rowsParaAdicionar.length > 0) {
-                // Informa ao usuário que o processamento começou.
-                await msg.reply(`🔄 Processando ${rowsParaAdicionar.length} inscrições. Aguarde...`);
-                
-                // Chama a função para adicionar múltiplas linhas na planilha de uma só vez.
+                await msg.reply(`🔄 A processar ${rowsParaAdicionar.length} inscrições. Aguarde...`);
                 const sucesso = await appendMultipleToSheet(rowsParaAdicionar);
-                
-                // Informa o resultado da operação.
                 if (sucesso) {
                     await msg.reply(`✅ ${rowsParaAdicionar.length} inscrições foram adicionadas à planilha com sucesso!`);
                 } else {
                     await msg.reply(`❌ Ocorreu um erro ao tentar adicionar as inscrições à planilha.`);
                 }
             }
-
-            // 10. Se houver linhas com erro de formato, informa o usuário.
             if (errosDeFormato.length > 0) {
                 await msg.reply(`⚠️ *Atenção:* As seguintes linhas foram ignoradas por erro de formato: ${errosDeFormato.join(', ')}.`);
             }
             break;
         }
-
 
         case '/leads': {
             await msg.reply('📋 Consultando a lista de interessados (leads)...');
@@ -138,46 +144,65 @@ async function handleAdminCommand(command, msg, client) {
             break;
         }
         
-        case '/avisoefetivos': {
-    await msg.reply('⏳ Iniciando o envio de lembretes para os *membros efetivos*.\n\nIsto pode demorar alguns minutos. Avisarei quando terminar.');
+        case '/disparar_efetivos': {
+            const adminMessage = msg.body.substring(command.length).trim();
+            if (!adminMessage) {
+                return await msg.reply("❌ Erro: Faltou a mensagem a ser enviada.\n\nUse o formato:\n*/disparar_efetivos* _<sua mensagem aqui>_");
+            }
+            const confirmationInstruction = "\n\n-------------------------\nPor favor, responda a esta mensagem com a palavra *OK* para confirmar a sua leitura.";
+            const messageToSend = adminMessage + confirmationInstruction;
 
-    // 1. Calcula os dias restantes (lógica que já conhecemos)
-    const dataAtual = moment().tz("America/Bahia");
-    const dataRetiro = moment(config.DATA_RETIRO, 'YYYY-MM-DD');
-    const diasRestantes = dataRetiro.startOf('day').diff(dataAtual.startOf('day'), 'days');
+            await msg.reply('🔎 Buscando a lista de membros efetivos na planilha...');
+            const members = await getMembrosEfetivosInscritos();
 
-    // 2. Define a mensagem a ser enviada
-    const criarMensagem = (nome) => `Paz e bem, ${nome.split(' ')[0]}! 🙏\n\nComo membro efetivo do JCC, a sua presença é a força motriz do nosso retiro. Contamos com as suas orações e a sua alegria!\n\nFaltam apenas *${diasRestantes} dias* para o nosso encontro. Que Deus nos prepare para este momento! 🔥`;
-
-    // 3. Busca a lista de membros efetivos
-    const membrosEfetivos = await getMembrosEfetivosInscritos();
-
-    if (!membrosEfetivos || membrosEfetivos.length === 0) {
-        return await msg.reply('❌ Não foram encontrados membros efetivos inscritos na planilha.');
-    }
-
-    let contadorEnvios = 0;
-    // 4. Envia as mensagens com um atraso seguro
-    for (const membro of membrosEfetivos) {
-        try {
-            const mensagemFinal = criarMensagem(membro.nome);
-            await client.sendMessage(membro.numero, mensagemFinal);
-            console.log(`- Lembrete de efetivo enviado para ${membro.nome}`);
-            contadorEnvios++;
-
-            // Atraso crucial para evitar spam
-            const atraso = Math.random() * 8000 + 5000; // Atraso entre 5 e 13 segundos
-            await new Promise(resolve => setTimeout(resolve, atraso));
-
-        } catch (err) {
-            console.error(`- Falha ao enviar lembrete de efetivo para ${membro.numero}: ${err.message}`);
+            if (!members || members.length === 0) {
+                return await msg.reply("Nenhum membro efetivo foi encontrado na lista de inscritos.");
+            }
+            
+            if (!userContext[from]) userContext[from] = {};
+            userContext[from].awaitingConfirmationForBroadcast = true;
+            userContext[from].pendingBroadcast = { members, messageToSend };
+            
+            const confirmationMessage = `⚠️ *CONFIRMAÇÃO DE ENVIO*\n\n` +
+                                        `Você está prestes a enviar a seguinte mensagem para *${members.length} membros efetivos*:\n\n` +
+                                        `-------------------------\n` +
+                                        `${messageToSend}\n` +
+                                        `-------------------------\n\n` +
+                                        `Para confirmar o envio, responda com a palavra *sim*. Para cancelar, responda qualquer outra coisa.`;
+            
+            await msg.reply(confirmationMessage);
+            break;
         }
-    }
 
-    // 5. Confirma a conclusão ao admin
-    await msg.reply(`✅ Disparo concluído!\n\nForam enviadas *${contadorEnvios}* mensagens para os membros efetivos.`);
-    break;
-}
+        case '/disparar_visitantes': {
+            const adminMessage = msg.body.substring(command.length).trim();
+            if (!adminMessage) {
+                return await msg.reply("❌ Erro: Faltou a mensagem a ser enviada.\n\nUse o formato:\n*/disparar_visitantes* _<sua mensagem aqui>_");
+            }
+            const messageToSend = adminMessage;
+
+            await msg.reply('🔎 Buscando a lista de membros visitantes na planilha...');
+            const members = await getMembrosVisitantesInscritos();
+
+            if (!members || members.length === 0) {
+                return await msg.reply("Nenhum membro visitante foi encontrado na lista de inscritos.");
+            }
+
+            if (!userContext[from]) userContext[from] = {};
+            userContext[from].awaitingConfirmationForBroadcast = true;
+            userContext[from].pendingBroadcast = { members, messageToSend };
+
+            const confirmationMessage = `⚠️ *CONFIRMAÇÃO DE ENVIO*\n\n` +
+                                        `Você está prestes a enviar a seguinte mensagem para *${members.length} membros visitantes*:\n\n` +
+                                        `-------------------------\n` +
+                                        `${messageToSend}\n` +
+                                        `-------------------------\n\n` +
+                                        `*Observação: Esta mensagem não solicitará confirmação de leitura.*\n\n` +
+                                        `Para confirmar o envio, responda com a palavra *sim*. Para cancelar, responda qualquer outra coisa.`;
+            
+            await msg.reply(confirmationMessage);
+            break;
+        }
 
         case '/ajuda': {
             const ajuda = `🤖 *Painel de Ajuda - Admin*\n\nAqui estão os comandos disponíveis:\n
@@ -186,8 +211,9 @@ async function handleAdminCommand(command, msg, client) {
 */list* - Lista o nome de todos os inscritos.
 */add* - Adiciona múltiplas inscrições de uma vez.
 */leads* - Lista os interessados que ainda não se inscreveram.
-*/ajuda* - Mostra esta mensagem de ajuda.`
-'*/avisoefetivos* - Envia lembretes para os membros efetivos do JCC.';
+*/disparar_efetivos* <msg> - Envia uma mensagem para todos os membros efetivos.
+*/disparar_visitantes* <msg> - Envia uma mensagem para todos os membros visitantes.
+*/ajuda* - Mostra esta mensagem de ajuda.`;
             await msg.reply(ajuda);
             break;
         }

@@ -1,22 +1,18 @@
-// index.js
+// index.js (VERSÃO FINAL E CORRIGIDA)
 
 const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const { memoria, MENU_PRINCIPAL } = require('./memoria.js');
 const config = require('./config.js');
-const { iniciarAgendadores } = require('./modulos/agendador.js'); 
-const { getSheetData, appendToSheet, detectIntent, getInscritos } = require('./modulos/googleServices.js');
-const { 
-    lerLeads, salvarLeads, lerBlacklist, salvarBlacklist, 
-    botStartTime, respostaAleatoria, normalizarTelefoneBrasil 
-} = require('./modulos/utils.js'); 
+const { iniciarAgendadores, lerBlacklist, salvarBlacklist } = require('./modulos/agendador.js');
+const { getSheetData, appendToSheet, detectIntent, getInscritos, getMembrosEfetivosInscritos, getMembrosVisitantesInscritos } = require('./modulos/googleServices.js');
+const { botStartTime, respostaAleatoria, formatarNumeroParaEnvio, lerLeads, salvarLeads } = require('./modulos/utils.js');
 const { handleAdminCommand } = require('./modulos/adminCommands.js');
 
 const floodControl = {};
 const MESSAGE_GRACE_PERIOD_SECONDS = 30;
 const PALAVRAS_CHAVE_COMPROVANTE = ['comprovante', 'pagamento', 'pix', 'paguei', 'inscrição', 'recibo', 'transferência', 'transferencia', 'tá pago', 'ta pago', 'comprovando'];
 const INTENTS_DE_ALTO_INTERESSE = ['fazer_inscricao', 'consultar_valor', 'consultar_local', 'consultar_data', 'prazo_inscricao', 'menor_idade'];
-
 
 function isUserFlooding(from) {
     const FLOOD_MESSAGE_LIMIT = 5;
@@ -55,8 +51,25 @@ async function handleMessage(msg, userContext, client) {
     const from = msg.from;
     const texto = msg.body ? msg.body.trim() : "";
 
+    // Bloco 1: Prioridade máxima para confirmação de admin
+    if (config.ADMIN_IDS && config.ADMIN_IDS.includes(from) && userContext[from] && userContext[from].awaitingConfirmationForBroadcast) {
+        await handleAdminCommand('', msg, client, userContext);
+        return; 
+    }
+
+    // Bloco 2: Verifica a confirmação 'OK' dos membros efetivos
+    if (texto.toLowerCase() === 'ok') {
+        const membrosEfetivos = await getMembrosEfetivosInscritos();
+        if (membrosEfetivos && membrosEfetivos.some(membro => membro.numero === from)) {
+            await msg.reply('Obrigado pela sua confirmação! 🙏');
+            return; 
+        }
+    }
+
+    // Bloco 3: Verifica se o utilizador está a fazer flood
     if (isUserFlooding(from)) { return; }
 
+    // Bloco 4: Verifica o comando 'sair'
     if (texto.toLowerCase() === 'sair') {
         const blacklist = lerBlacklist();
         if (!blacklist.includes(from)) {
@@ -67,17 +80,20 @@ async function handleMessage(msg, userContext, client) {
         return;
     }
 
+    // Bloco 5: Verifica comandos de admin que começam com '/'
     if (texto.startsWith('/')) {
-        const command = texto.split('\n')[0].trim(); 
+        const linhasDaMensagem = texto.split('\n');
+        const command = linhasDaMensagem[0].split(' ')[0]; 
 
         if (config.ADMIN_IDS && config.ADMIN_IDS.includes(from)) {
-            // Passamos o 'command' limpo, e não a mensagem inteira.
-            await handleAdminCommand(command, msg, client);
+            await handleAdminCommand(command, msg, client, userContext);
         } else {
             console.log(`[SEGURANÇA] Comando de admin "${texto}" bloqueado para o usuário ${from}.`);
         }
         return; 
     }
+    
+    // --- A partir daqui, segue a lógica normal de conversa ---
 
     if (msg.hasMedia && !PALAVRAS_CHAVE_COMPROVANTE.some(p => texto.toLowerCase().includes(p))) {
         const mimetype = msg._data.mimetype || '';
@@ -106,26 +122,19 @@ async function handleMessage(msg, userContext, client) {
             const dataParaSalvar = context.pendingRegistrationData;
             const nomeCompletoInscrito = dataParaSalvar[1];
             
-            // --- LÓGICA DE ENVIO PARA O ADMIN MELHORADA ---
             try {
                 const comprovanteMsg = context.pendingReceiptMsg;
                 if (comprovanteMsg && comprovanteMsg.hasMedia) {
-                    // 1. Descarrega a mídia do comprovativo
                     const media = await comprovanteMsg.downloadMedia();
-                    
-                    // 2. Envia a mídia como uma NOVA mensagem para o grupo
                     const tesoureiroId = config.TESOUREIRO_ID;
                     const tesoureiroNumber = tesoureiroId.split('@')[0];
                     const textoMencao = `📄 Nova inscrição recebida!\n\n*Nome:* ${nomeCompletoInscrito}\n*Número:* ${from.replace('@c.us', '')}\n\nTesoureiro: @${tesoureiroNumber}, por favor, confirme o pagamento.`;
-
                     await client.sendMessage(config.GRUPO_ID_ADMIN, media, { caption: textoMencao, mentions: [tesoureiroId] });
                 }
             } catch (adminError) { 
                 console.error("[ERRO ADMIN] Falha ao enviar comprovante para o grupo de admin:", adminError.message);
-                // Envia uma notificação de texto se o envio da mídia falhar
                 await client.sendMessage(config.GRUPO_ID_ADMIN, `🚨 ALERTA: Falha ao processar o anexo da inscrição de ${nomeCompletoInscrito}. Inscrição adicionada à planilha, mas o comprovante precisa de ser verificado manualmente.`);
             }
-            // --- FIM DA LÓGICA MELHORADA ---
 
             if (await appendToSheet(dataParaSalvar)) {
                 await msg.reply(`Perfeito! Inscrição confirmada e dados guardados. 🙌`);
@@ -139,7 +148,7 @@ async function handleMessage(msg, userContext, client) {
             }
             userContext[from] = {};
         } else if (['2', 'nao', 'não', 'corrigir'].includes(escolha)) {
-            await msg.reply('Sem problemas! O seu comprovante está guardado. Por favor, envie os seus dados novamente, com atenção:\n\n1. Seu nome completo\n2. Seu e-mail\n3. Nome do responsável (se for menor de 18 anos)\n4. Você é membro efetivo do JCC? (Responda com *Sim* ou *Não*)');
+            await msg.reply('Sem problemas! O seu comprovante está guardado. Por favor, envie os seus dados novamente, com atenção:\n\n1. Seu nome completo\n2. Seu melhor e-mail\n3. Nome do responsável (se for menor, ou digite N/A)\n4. Você é membro efetivo do JCC? (Responda com Sim ou Não)');
             context.awaitingDetails = true;
             context.awaitingConfirmation = false;
             context.pendingRegistrationData = null;
@@ -149,7 +158,6 @@ async function handleMessage(msg, userContext, client) {
         return;
     }
 
-    // Bloco para enviar o PDF da ficha presencial
     if (context.awaitingPresentialPDFChoice) {
         if (texto === '1') {
             await msg.reply("Ótimo! Preparando o envio do PDF...");
@@ -207,33 +215,42 @@ async function handleMessage(msg, userContext, client) {
     context.awaitingMenuChoice = false; 
 
     if (context.awaitingDetails) {
-        const detalhes = msg.body.split('\n');
-        const nomeCompleto = detalhes[0] || 'Não informado';
-        const email = detalhes[1] || 'Não informado';
-        const responsavel = detalhes[2] || 'N/A';
-        const ehMembro = detalhes[3] || 'Não informado';
+    const detalhes = msg.body.split('\n');
 
-        const dataParaPlanilha = [
-            new Date().toLocaleString('pt-BR', { timeZone: 'America/Bahia' }), 
-            nomeCompleto, 
-            email, 
-            contato.number, 
-            responsavel,
-            ehMembro.trim() // Adiciona a nova informação à planilha
-        ];
-        context.pendingRegistrationData = dataParaPlanilha;
+    // Voltamos a ler apenas 4 linhas
+    const nomeCompleto = detalhes[0] || 'Não informado';
+    const email = detalhes[1] || 'Não informado';
+    const responsavel = detalhes[2] || 'N/A';
+    const ehMembro = detalhes[3] || 'Não informado';
 
-        const confirmationMessage = `Por favor, confirme se os seus dados estão corretos:\n\n*Nome:* ${nomeCompleto}\n*E-mail:* ${email}\n*Responsável:* ${responsavel}\n*É membro do efetivo do JCC?* ${ehMembro}\n\nDigite *1* - Sim, confirmar\nDigite *2* - Não, quero corrigir`;
-        
-        await msg.reply(confirmationMessage);
-        context.awaitingDetails = false;
-        context.awaitingConfirmation = true;
-        return;
-    }
+    const dataParaPlanilha = [
+        new Date().toLocaleString('pt-BR', { timeZone: 'America/Bahia' }), 
+        nomeCompleto, 
+        email, 
+        contato.number, // AQUI: Voltamos a usar o número do remetente
+        responsavel,
+        ehMembro.trim()
+    ];
+    context.pendingRegistrationData = dataParaPlanilha;
+
+    // Mensagem de confirmação sem o campo "Telefone"
+    const confirmationMessage = `Por favor, confirme se os seus dados estão corretos:\n\n` +
+                                `*Nome:* ${nomeCompleto}\n` +
+                                `*E-mail:* ${email}\n` +
+                                `*Responsável:* ${responsavel}\n` +
+                                `*É membro do JCC?* ${ehMembro}\n\n` +
+                                `Digite *1* - Sim, confirmar\n` +
+                                `Digite *2* - Não, quero corrigir`;
+
+    await msg.reply(confirmationMessage);
+    context.awaitingDetails = false;
+    context.awaitingConfirmation = true;
+    return;
+}
 
     if (msg.hasMedia && PALAVRAS_CHAVE_COMPROVANTE.some(p => texto.toLowerCase().includes(p))) {
         context.pendingReceiptMsg = msg;
-        const confirmacaoUsuario = respostaAleatoria([ `Obrigado, ${nomeUsuario}! Comprovante recebido. 🙏\n\nAgora, por favor, envie os seguintes dados, *cada um em uma linha*:\n\n1. Seu nome completo\n2. Seu melhor e-mail\n3. Nome do responsável (se for menor)\n4. Você é membro efetivo do JCC? (Responda com *Sim* ou *Não*)` ]);
+        const confirmacaoUsuario = respostaAleatoria([ `Obrigado, ${nomeUsuario}! Comprovante recebido. 🙏\n\nAgora, por favor, envie os seguintes dados, *cada um em uma linha*:\n\n1. Seu nome completo\n2. Seu melhor e-mail\n3. Nome do responsável (se for menor, ou digite N/A)\n4. Você é membro efetivo do JCC? (Responda com Sim ou Não)` ]);
         await msg.reply(confirmacaoUsuario);
         context.awaitingDetails = true;
         return;
@@ -269,18 +286,16 @@ async function handleMessage(msg, userContext, client) {
 }
 
 async function responderComItem(itemParaResponder, msg, context, nomeUsuario, chat) {
-    // --- LÓGICA DE REGISTO DE LEAD ATUALIZADA ---
+    // --- LÓGICA DE REGISTO DE LEAD ---
     if (INTENTS_DE_ALTO_INTERESSE.includes(itemParaResponder.id)) {
-        
         const inscritos = await getInscritos();
         if (inscritos) {
             const numerosInscritos = new Set(inscritos.map(i => i.numero));
-
-            // AQUI ESTÁ A CORREÇÃO: Normalizamos o ID do usuário atual ANTES de verificar
-            const idUsuarioNormalizado = `${normalizarTelefoneBrasil(msg.from)}@c.us`;
+            
+            // --- AJUSTE APLICADO AQUI ---
+            const idUsuarioNormalizado = formatarNumeroParaEnvio(msg.from);
 
             if (!numerosInscritos.has(idUsuarioNormalizado)) {
-                // Se o usuário NÃO está na lista de inscritos, adiciona-o como lead.
                 console.log(`[LEADS] Detectado alto interesse do usuário ${nomeUsuario} (${msg.from}). Adicionando/atualizando lead.`);
                 const leads = lerLeads();
                 leads[msg.from] = {
@@ -290,7 +305,6 @@ async function responderComItem(itemParaResponder, msg, context, nomeUsuario, ch
                 };
                 salvarLeads(leads);
             } else {
-                // Se o usuário JÁ está inscrito, apenas regista no log e não faz nada.
                 console.log(`[LEADS] Usuário ${nomeUsuario} (${msg.from}) já está inscrito. Ignorando adição à lista de leads.`);
             }
         }

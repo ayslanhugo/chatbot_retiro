@@ -5,6 +5,38 @@ const fs = require('fs');
 
 const botStartTime = Date.now();
 
+function formatarNumeroParaEnvio(numero) {
+    if (!numero) return null;
+
+    // 1. Limpa tudo que não for número
+    let numLimpo = String(numero).replace(/[^0-9]/g, '');
+
+    // 2. Garante que começa com 55 (código do Brasil)
+    if (numLimpo.length >= 10 && !numLimpo.startsWith('55')) {
+        numLimpo = '55' + numLimpo;
+    }
+
+    // Se não tiver código de país ou for curto demais, retorna o que tem.
+    if (!numLimpo.startsWith('55') || numLimpo.length < 12) {
+        return numLimpo;
+    }
+
+    // 3. Isola o número após o '55'
+    const ddd = numLimpo.substring(2, 4);
+    let corpoNumero = numLimpo.substring(4);
+
+    // 4. Se o corpo do número tem 9 dígitos e o primeiro é '9', removemos ele.
+    if (corpoNumero.length === 9 && corpoNumero.startsWith('9')) {
+        corpoNumero = corpoNumero.substring(1); // Pega a partir do segundo caractere
+        const numeroCorrigido = `55${ddd}${corpoNumero}`;
+        console.log(`[FORMATADOR] Número ${numLimpo} ajustado para ${numeroCorrigido} (removido o 9)`);
+        return numeroCorrigido;
+    }
+
+    // Retorna o número limpo se nenhuma regra se aplicou
+    return numLimpo;
+}
+
 function getUptime() {
     const uptimeSeconds = Math.floor((Date.now() - botStartTime) / 1000);
     const days = Math.floor(uptimeSeconds / 86400);
@@ -99,7 +131,7 @@ function salvarLeads(leads) {
 module.exports = {
     botStartTime,
     getUptime,
-    normalizarTelefoneBrasil,
+    formatarNumeroParaEnvio,
     respostaAleatoria,
     normalizeText,
     smartMatch,
